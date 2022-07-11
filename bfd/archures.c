@@ -102,6 +102,23 @@ DESCRIPTION
 .#define bfd_mach_mcf_isa_c_nodiv_mac	30
 .#define bfd_mach_mcf_isa_c_nodiv_emac	31
 .  bfd_arch_vax,       {* DEC Vax.  *}
+.  bfd_arch_i960,      {* Intel 960 *}
+.    {* The order of the following is important.
+.       lower number indicates a machine type that
+.       only accepts a subset of the instructions
+.       available to machines with higher numbers.
+.       The exception is the "ca", which is
+.       incompatible with all other machines except
+.       "core".  *}
+.
+.#define bfd_mach_i960_core      1
+.#define bfd_mach_i960_ka_sa     2
+.#define bfd_mach_i960_kb_sb     3
+.#define bfd_mach_i960_mc        4
+.#define bfd_mach_i960_xa        5
+.#define bfd_mach_i960_ca        6
+.#define bfd_mach_i960_jx	 7
+.#define bfd_mach_i960_hx        8
 .
 .  bfd_arch_or1k,      {* OpenRISC 1000.  *}
 .#define bfd_mach_or1k		1
@@ -633,6 +650,7 @@ extern const bfd_arch_info_type bfd_h8300_arch;
 extern const bfd_arch_info_type bfd_hppa_arch;
 extern const bfd_arch_info_type bfd_i386_arch;
 extern const bfd_arch_info_type bfd_iamcu_arch;
+extern const bfd_arch_info_type bfd_i960_arch;
 extern const bfd_arch_info_type bfd_ia64_arch;
 extern const bfd_arch_info_type bfd_ip2k_arch;
 extern const bfd_arch_info_type bfd_iq2000_arch;
@@ -723,6 +741,7 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_hppa_arch,
     &bfd_i386_arch,
     &bfd_iamcu_arch,
+    &bfd_i960_arch,
     &bfd_ia64_arch,
     &bfd_ip2k_arch,
     &bfd_iq2000_arch,
