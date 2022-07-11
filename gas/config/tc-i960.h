@@ -20,12 +20,12 @@
 
 #ifndef TC_I960
 #define TC_I960 1
-
 #ifdef OBJ_ELF
 #define TARGET_FORMAT "elf32-i960"
 #define TARGET_ARCH bfd_arch_i960
 #endif
 
+#include "bit_fix.h"
 #define TARGET_BYTES_BIG_ENDIAN 0
 
 #define WORKING_DOT_WORD
@@ -177,9 +177,9 @@ extern const struct relax_type md_relax_table[];
 #define TC_GENERIC_RELAX_TABLE md_relax_table
 
 #define LINKER_RELAXING_SHRINKS_ONLY
-
-#define TC_FIX_TYPE struct { unsigned bsr : 1; }
+// i960-elf has an extra structure
+#define TC_FIX_TYPE struct { bit_fixS *bit_fixP; unsigned bsr : 1; }
 #define fx_bsr tc_fix_data.bsr
-#define TC_INIT_FIX_DATA(F)	((F)->tc_fix_data.bsr = 0)
-
+#define fx_bit_fixP tc_fix_data.bit_fixP
+#define TC_INIT_FIX_DATA(F)	do { ((F)->tc_fix_data.bit_fixP = NULL); ((F)->tc_fix_data.bsr = 0); } while (0)
 #endif
