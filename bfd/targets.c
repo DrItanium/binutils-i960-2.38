@@ -753,6 +753,7 @@ extern const bfd_target i386_msdos_vec;
 extern const bfd_target i386_pe_vec;
 extern const bfd_target i386_pe_big_vec;
 extern const bfd_target i386_pei_vec;
+extern const bfd_target i960_elf32_vec;
 extern const bfd_target iamcu_elf32_vec;
 extern const bfd_target ia64_elf32_be_vec;
 extern const bfd_target ia64_elf32_hpux_be_vec;
@@ -1099,6 +1100,8 @@ static const bfd_target * const _bfd_target_vector[] =
 	&i386_pe_vec,
 	&i386_pe_big_vec,
 	&i386_pei_vec,
+
+	&i960_elf32_vec,
 
 	&iamcu_elf32_vec,
 
