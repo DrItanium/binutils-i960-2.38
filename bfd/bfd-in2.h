@@ -2334,6 +2334,8 @@ decided relatively late.  */
   BFD_RELOC_GPREL16,
   BFD_RELOC_GPREL32,
 
+/* Reloc types used for i960/b.out (although I'm going to use it for ELF) */
+  BFD_RELOC_I960_CALLJ, 
 /* SPARC ELF relocations.  There is probably some overlap with other
 relocation types already defined.  */
   BFD_RELOC_NONE,

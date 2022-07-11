@@ -1,6 +1,7 @@
 /* BFD library support routines for the i960 architecture.
-   Copyright (C) 1990-2017 Free Software Foundation, Inc.
+   Copyright (C) 1990-2022 Free Software Foundation, Inc.
    Hacked by Steve Chamberlain of Cygnus Support.
+   Cleaned up by Joshua Scoggins
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -27,12 +28,12 @@
    could possibly refer to the i960 machine pointed at in the
    info_struct pointer */
 
-static bfd_boolean
+static bool 
 scan_960_mach (const bfd_arch_info_type *ap,
 	       const char *string)
 {
   unsigned long machine;
-  int fail_because_not_80960 = FALSE;
+  int fail_because_not_80960 = false;
 
   /* Look for the string i960 at the front of the string.  */
   if (strncasecmp ("i960", string, 4) == 0)
@@ -45,7 +46,7 @@ scan_960_mach (const bfd_arch_info_type *ap,
 
       /* "i960:*" is valid, anything else is not.  */
       if (* string != ':')
-	return FALSE;
+	return false;
 
       string ++;
     }
@@ -55,16 +56,16 @@ scan_960_mach (const bfd_arch_info_type *ap,
     {
       string += 5;
 
-      /* Set this to TRUE here.  If a correct matching postfix
-	 is detected below it will be reset to FALSE.  */
-      fail_because_not_80960 = TRUE;
+      /* Set this to true here.  If a correct matching postfix
+	 is detected below it will be reset to false.  */
+      fail_because_not_80960 = true;
     }
   /* No match, can't be us.  */
   else
-    return FALSE;
+    return false;
 
   if (* string == '\0')
-    return FALSE;
+    return false;
 
   if (string[0] == 'c' && string[1] == 'o' && string[2] == 'r' &&
       string[3] == 'e' && string[4] == '\0')
@@ -74,19 +75,19 @@ scan_960_mach (const bfd_arch_info_type *ap,
   else if (strcasecmp (string, "kb_sb") == 0)
     machine = bfd_mach_i960_kb_sb;
   else if (string[1] == '\0' || string[2] != '\0') /* rest are 2-char.  */
-    return FALSE;
+    return false;
   else if (string[0] == 'k' && string[1] == 'b')
-    { machine = bfd_mach_i960_kb_sb; fail_because_not_80960 = FALSE; }
+    { machine = bfd_mach_i960_kb_sb; fail_because_not_80960 = false; }
   else if (string[0] == 's' && string[1] == 'b')
     machine = bfd_mach_i960_kb_sb;
   else if (string[0] == 'm' && string[1] == 'c')
-    { machine = bfd_mach_i960_mc; fail_because_not_80960 = FALSE; }
+    { machine = bfd_mach_i960_mc; fail_because_not_80960 = false; }
   else if (string[0] == 'x' && string[1] == 'a')
     machine = bfd_mach_i960_xa;
   else if (string[0] == 'c' && string[1] == 'a')
-    { machine = bfd_mach_i960_ca; fail_because_not_80960 = FALSE; }
+    { machine = bfd_mach_i960_ca; fail_because_not_80960 = false; }
   else if (string[0] == 'k' && string[1] == 'a')
-    { machine = bfd_mach_i960_ka_sa; fail_because_not_80960 = FALSE; }
+    { machine = bfd_mach_i960_ka_sa; fail_because_not_80960 = false; }
   else if (string[0] == 's' && string[1] == 'a')
     machine = bfd_mach_i960_ka_sa;
   else if (string[0] == 'j' && string[1] == 'x')
@@ -94,15 +95,15 @@ scan_960_mach (const bfd_arch_info_type *ap,
   else if (string[0] == 'h' && string[1] == 'x')
     machine = bfd_mach_i960_hx;
   else
-    return FALSE;
+    return false;
 
   if (fail_because_not_80960)
-    return FALSE;
+    return false;
 
   if (machine == ap->mach)
-    return TRUE;
+    return true;
 
-  return FALSE;
+  return false;
 }
 
 /* This routine is provided two arch_infos and works out the i960
@@ -159,14 +160,14 @@ compatible (const bfd_arch_info_type *a,
 
 static const bfd_arch_info_type arch_info_struct[] =
 {
-  N(bfd_mach_i960_ka_sa,"i960:ka_sa",FALSE, &arch_info_struct[1]),
-  N(bfd_mach_i960_kb_sb,"i960:kb_sb",FALSE, &arch_info_struct[2]),
-  N(bfd_mach_i960_mc,   "i960:mc",   FALSE, &arch_info_struct[3]),
-  N(bfd_mach_i960_xa,   "i960:xa",   FALSE, &arch_info_struct[4]),
-  N(bfd_mach_i960_ca,   "i960:ca",   FALSE, &arch_info_struct[5]),
-  N(bfd_mach_i960_jx,   "i960:jx",   FALSE, &arch_info_struct[6]),
-  N(bfd_mach_i960_hx,	"i960:hx",   FALSE, 0),
+  N(bfd_mach_i960_ka_sa,"i960:ka_sa",false, &arch_info_struct[1]),
+  N(bfd_mach_i960_kb_sb,"i960:kb_sb",false, &arch_info_struct[2]),
+  N(bfd_mach_i960_mc,   "i960:mc",   false, &arch_info_struct[3]),
+  N(bfd_mach_i960_xa,   "i960:xa",   false, &arch_info_struct[4]),
+  N(bfd_mach_i960_ca,   "i960:ca",   false, &arch_info_struct[5]),
+  N(bfd_mach_i960_jx,   "i960:jx",   false, &arch_info_struct[6]),
+  N(bfd_mach_i960_hx,	"i960:hx",   false, 0),
 };
 
 const bfd_arch_info_type bfd_i960_arch =
-  N(bfd_mach_i960_core, "i960:core", TRUE, &arch_info_struct[0]);
+  N(bfd_mach_i960_core, "i960:core", true, &arch_info_struct[0]);
