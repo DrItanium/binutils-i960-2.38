@@ -153,21 +153,27 @@ compatible (const bfd_arch_info_type *a,
 
   return (a->mach  ==  matrix[a->mach][b->mach]) ?  a : b;
 }
-
+#define N(NUMBER, PRINT, WORDSIZE, DEFAULT, NEXT) \
+{ \
+    WORDSIZE, WORDSIZE, 8, bfd_arch_i960, NUMBER, "i960", \
+    PRINT, 3, DEFAULT, compatible, scan_960_mach, bfd_arch_default_fill, NEXT, 0 \
+}
+#if 0
 #define N(a,b,d,n) \
 { 32, 32, 8,bfd_arch_i960,a,"i960",b,3,d,compatible,scan_960_mach, \
   bfd_arch_default_fill, n,}
+#endif
 
 static const bfd_arch_info_type arch_info_struct[] =
 {
-  N(bfd_mach_i960_ka_sa,"i960:ka_sa",false, &arch_info_struct[1]),
-  N(bfd_mach_i960_kb_sb,"i960:kb_sb",false, &arch_info_struct[2]),
-  N(bfd_mach_i960_mc,   "i960:mc",   false, &arch_info_struct[3]),
-  N(bfd_mach_i960_xa,   "i960:xa",   false, &arch_info_struct[4]),
-  N(bfd_mach_i960_ca,   "i960:ca",   false, &arch_info_struct[5]),
-  N(bfd_mach_i960_jx,   "i960:jx",   false, &arch_info_struct[6]),
-  N(bfd_mach_i960_hx,	"i960:hx",   false, 0),
+  N(bfd_mach_i960_ka_sa,"i960:ka_sa",32, false, &arch_info_struct[1]),
+  N(bfd_mach_i960_kb_sb,"i960:kb_sb",32, false, &arch_info_struct[2]),
+  N(bfd_mach_i960_mc,   "i960:mc",   32, false, &arch_info_struct[3]),
+  N(bfd_mach_i960_xa,   "i960:xa",   32, false, &arch_info_struct[4]),
+  N(bfd_mach_i960_ca,   "i960:ca",   32, false, &arch_info_struct[5]),
+  N(bfd_mach_i960_jx,   "i960:jx",   32, false, &arch_info_struct[6]),
+  N(bfd_mach_i960_hx,	"i960:hx",   32, false, NULL),
 };
 
 const bfd_arch_info_type bfd_i960_arch =
-  N(bfd_mach_i960_core, "i960:core", true, &arch_info_struct[0]);
+  N(bfd_mach_i960_core, "i960:core", 32, true, &arch_info_struct[0]);
