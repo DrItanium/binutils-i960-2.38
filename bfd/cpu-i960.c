@@ -52,7 +52,7 @@ scan_960_mach (const bfd_arch_info_type *ap,
     }
   /* In some bfds the cpu-id is written as "80960KA", "80960KB",
      "80960CA" or "80960MC".  */
-  else if (CONST_STRNEQ (string, "80960"))
+  else if (startswith (string, "80960"))
     {
       string += 5;
 

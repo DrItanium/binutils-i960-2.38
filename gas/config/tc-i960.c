@@ -1,5 +1,6 @@
 /* tc-i960.c - All the i80960-specific stuff
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+   Copyright (C) 1989-2022 Free Software Foundation, Inc.
+   Cleaned up by Joshua Scoggins
 
    This file is part of GAS.
 
@@ -460,24 +461,24 @@ md_begin (void)
   const struct i960_opcode *oP;	/* Pointer into opcode table.  */
   const char *retval;		/* Value returned by hash functions.  */
 
-  op_hash = hash_new ();
-  reg_hash = hash_new ();
-  areg_hash = hash_new ();
+  op_hash = str_htab_create ();
+  reg_hash = str_htab_create ();
+  areg_hash = str_htab_create ();
 
   /* For some reason, the base assembler uses an empty string for "no
      error message", instead of a NULL pointer.  */
   retval = 0;
 
   for (oP = i960_opcodes; oP->name && !retval; oP++)
-    retval = hash_insert (op_hash, oP->name, (void *) oP);
+    retval = str_hash_insert (op_hash, oP->name, (void *) oP, 0);
 
   for (i = 0; regnames[i].reg_name && !retval; i++)
-    retval = hash_insert (reg_hash, regnames[i].reg_name,
-			  (char *) &regnames[i].reg_num);
+    retval = str_hash_insert (reg_hash, regnames[i].reg_name,
+			  (char *) &regnames[i].reg_num, 0);
 
   for (i = 0; aregs[i].areg_name && !retval; i++)
-    retval = hash_insert (areg_hash, aregs[i].areg_name,
-			  (char *) &aregs[i].areg_num);
+    retval = str_hash_insert (areg_hash, aregs[i].areg_name,
+			  (char *) &aregs[i].areg_num, 0);
 
   if (retval)
     as_fatal (_("Hashing returned \"%s\"."), retval);
@@ -521,7 +522,7 @@ parse_expr (const char *textP,		/* Text of expression to be parsed.  */
 	expP->X_op = O_illegal;
 
       symP = expP->X_add_symbol;
-      if (symP && (hash_find (reg_hash, S_GET_NAME (symP))))
+      if (symP && (str_hash_find (reg_hash, S_GET_NAME (symP))))
 	/* Register name in an expression.  */
 	/* FIXME: this isn't much of a check any more.  */
 	expP->X_op = O_illegal;
@@ -694,7 +695,7 @@ get_regnum (char *regname)	/* Suspected register name.  */
 {
   int *rP;
 
-  rP = (int *) hash_find (reg_hash, regname);
+  rP = (int *) str_hash_find (reg_hash, regname);
   return (rP == NULL) ? -1 : *rP;
 }
 
@@ -973,7 +974,7 @@ parse_memop (memS *memP,	/* Where to put the results.  */
     {
       /* "(" is there -- does it start a legal abase spec?  If not, it
          could be part of a displacement expression.  */
-      intP = (int *) hash_find (areg_hash, p);
+      intP = (int *) str_hash_find (areg_hash, p);
       if (intP != NULL)
 	{
 	  /* Got an abase here.  */
@@ -1642,7 +1643,7 @@ md_assemble (char *textP)
   /* Look up opcode mnemonic in table and check number of operands.
      Check that opcode is legal for the target architecture.  If all
      looks good, assemble instruction.  */
-  oP = (struct i960_opcode *) hash_find (op_hash, args[0]);
+  oP = (struct i960_opcode *) str_hash_find (op_hash, args[0]);
   if (!oP || !targ_has_iclass (oP->iclass))
     as_bad (_("invalid opcode, \"%s\"."), args[0]);
   else if (n_ops != oP->num_ops)
@@ -2467,7 +2468,7 @@ md_section_align (segT seg,
 {
   int align;
 
-  align = bfd_get_section_alignment (stdoutput, seg);
+  align = bfd_section_alignment (seg);
   return (addr + (1 << align) - 1) & -(1 << align);
 }
 
