@@ -1237,8 +1237,8 @@ parse_ldconst (char *arg[])	/* See above.  */
 {
   int n;			/* Constant to be loaded.  */
   int shift;			/* Shift count for "shlo" instruction.  */
-  static char buf[5];		/* Literal for first operand.  */
-  static char buf2[5];		/* Literal for second operand.  */
+  static char buf[10];		/* Literal for first operand.  */
+  static char buf2[10];		/* Literal for second operand.  */
   expressionS e;		/* Parsed expression.  */
 
   arg[3] = NULL;		/* So we can tell at the end if it got used or not.  */
