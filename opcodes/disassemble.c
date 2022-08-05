@@ -103,6 +103,7 @@
 #define ARCH_xtensa
 #define ARCH_z80
 #define ARCH_z8k
+#define ARCH_i960
 #endif
 
 #ifdef ARCH_m32c
@@ -233,6 +234,11 @@ disassembler (enum bfd_architecture a,
     case bfd_arch_k1om:
       disassemble = print_insn_i386;
       break;
+#endif
+#ifdef ARCH_i960
+        case bfd_arch_i960:
+            disassemble = print_insn_i960;
+            break;
 #endif
 #ifdef ARCH_ia64
     case bfd_arch_ia64:

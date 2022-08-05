@@ -154,9 +154,21 @@ compatible (const bfd_arch_info_type *a,
   return (a->mach  ==  matrix[a->mach][b->mach]) ?  a : b;
 }
 #define N(NUMBER, PRINT, WORDSIZE, DEFAULT, NEXT) \
-{ \
-    WORDSIZE, WORDSIZE, 8, bfd_arch_i960, NUMBER, "i960", \
-    PRINT, 3, DEFAULT, compatible, scan_960_mach, bfd_arch_default_fill, NEXT, 0 \
+{                                                 \
+    WORDSIZE,                                     \
+    WORDSIZE,                                     \
+    8,                                            \
+    bfd_arch_i960,                                \
+    NUMBER,                                       \
+    "i960",                                       \
+    PRINT,                                        \
+    3,                                            \
+    DEFAULT,                                      \
+    compatible,                                   \
+    scan_960_mach,                                \
+    bfd_arch_default_fill,                        \
+    NEXT,                                         \
+    0                                             \
 }
 #if 0
 #define N(a,b,d,n) \
