@@ -1,5 +1,6 @@
 /* Disassemble i80960 instructions.
    Copyright (C) 1990-2017 Free Software Foundation, Inc.
+   Updated by Joshua Scoggins 2022
 
    This file is part of the GNU opcodes library.
 
@@ -33,16 +34,16 @@ static const char *const reg_names[] = {
 //static FILE *stream;		/* Output goes here */
 //static struct disassemble_info *info;
 static void print_addr (bfd_vma, disassemble_info*);
-static void ctrl (bfd_vma, unsigned long, unsigned long, disassemble_info*);
-static void cobr (bfd_vma, unsigned long, unsigned long, disassemble_info*);
-static void reg (unsigned long, disassemble_info*);
-static int mem (bfd_vma, unsigned long, unsigned long, int, disassemble_info*);
+static void ctrl (bfd_vma, uint32_t, uint32_t, disassemble_info*);
+static void cobr (bfd_vma, uint32_t, uint32_t, disassemble_info*);
+static void reg (uint32_t, disassemble_info*);
+static int mem (bfd_vma, uint32_t, uint32_t, int, disassemble_info*);
 static void ea (bfd_vma, int, const char *, const char *, int, unsigned int, disassemble_info*);
 static void dstop (int, int, int, disassemble_info*);
 static void regop (int, int, int, int, disassemble_info*);
 static void invalid (int, disassemble_info*);
-static int pinsn (bfd_vma, unsigned long, unsigned long, disassemble_info*);
-static void put_abs (unsigned long, unsigned long, disassemble_info*);
+static int pinsn (bfd_vma, uint32_t, uint32_t, disassemble_info*);
+static void put_abs (uint32_t, uint32_t, disassemble_info*);
 
 
 /* Print the i960 instruction at address 'memaddr' in debugged memory,
@@ -93,7 +94,6 @@ print_insn_i960 (bfd_vma memaddr, disassemble_info *info)
     return pinsn( memaddr, word1, word2, info);
 }
 
-#define IN_GDB
 
 /*****************************************************************************
  *	All code below this point should be identical with that of
@@ -115,7 +115,7 @@ struct sparse_tabent {
 };
 
 static int
-pinsn (bfd_vma memaddr, unsigned long word1, unsigned long word2, disassemble_info* info)
+pinsn (bfd_vma memaddr, uint32_t word1, uint32_t word2, disassemble_info* info)
 {
   int instr_len;
 
@@ -156,7 +156,7 @@ pinsn (bfd_vma memaddr, unsigned long word1, unsigned long word2, disassemble_in
 /* CTRL format.. */
 
 static void
-ctrl (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED, disassemble_info* info)
+ctrl (bfd_vma memaddr, uint32_t word1, uint32_t word2 ATTRIBUTE_UNUSED, disassemble_info* info)
 {
   int i;
   static const struct tabent ctrl_tab[] = {
@@ -225,7 +225,7 @@ ctrl (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED
 /* COBR format.  */
 
 static void
-cobr (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED, disassemble_info* info)
+cobr (bfd_vma memaddr, uint32_t word1, uint32_t word2 ATTRIBUTE_UNUSED, disassemble_info* info)
 {
   int src1;
   int src2;
@@ -313,7 +313,7 @@ cobr (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED
 /* Returns instruction length: 4 or 8.  */
 
 static int
-mem (bfd_vma memaddr, unsigned long word1, unsigned long word2, int noprint, disassemble_info* info)
+mem (bfd_vma memaddr, uint32_t word1, uint32_t word2, int noprint, disassemble_info* info)
 {
   int i, j;
   int len;
@@ -457,7 +457,7 @@ mem (bfd_vma memaddr, unsigned long word1, unsigned long word2, int noprint, dis
 /* REG format.  */
 
 static void
-reg (unsigned long word1, disassemble_info* info)
+reg (uint32_t word1, disassemble_info* info)
 {
   int i, j;
   int opcode;
@@ -714,7 +714,7 @@ reg (unsigned long word1, disassemble_info* info)
       fp = 0;
     }
 
-  (*info->fprintf_func) (stream, "%s", mnemp);
+  (*info->fprintf_func) (info->stream, "%s", mnemp);
 
   s1   = (word1 >> 5)  & 1;
   s2   = (word1 >> 6)  & 1;
@@ -727,32 +727,32 @@ reg (unsigned long word1, disassemble_info* info)
 
   if  (reg_tab[i].numops != 0)
     {
-      (*info->fprintf_func) (stream, "\t");
+      (*info->fprintf_func) (info->stream, "\t");
 
     switch (reg_tab[i].numops)
       {
       case 1:
-	regop (m1, s1, src, fp);
+	regop (m1, s1, src, fp, info);
 	break;
       case -1:
-	dstop (m3, dst, fp);
+	dstop (m3, dst, fp, info);
 	break;
       case 2:
-	regop (m1, s1, src, fp);
-	(*info->fprintf_func) (stream, ",");
-	regop (m2, s2, src2, fp);
+	regop (m1, s1, src, fp, info);
+	(*info->fprintf_func) (info->stream, ",");
+	regop (m2, s2, src2, fp, info);
 	break;
       case -2:
-	regop (m1, s1, src, fp);
-	(*info->fprintf_func) (stream, ",");
-	dstop (m3, dst, fp);
+	regop (m1, s1, src, fp, info);
+	(*info->fprintf_func) (info->stream, ",");
+	dstop (m3, dst, fp, info);
 	break;
       case 3:
-	regop (m1, s1, src, fp);
-	(*info->fprintf_func) (stream, ",");
-	regop (m2, s2, src2, fp);
-	(*info->fprintf_func) (stream, ",");
-	dstop (m3, dst, fp);
+	regop (m1, s1, src, fp, info);
+	(*info->fprintf_func) (info->stream, ",");
+	regop (m2, s2, src2, fp, info);
+	(*info->fprintf_func) (info->stream, ",");
+	dstop (m3, dst, fp, info);
 	break;
       }
     }
@@ -899,12 +899,10 @@ print_addr (bfd_vma a, disassemble_info* info)
 }
 
 static void
-put_abs (unsigned long word1 ATTRIBUTE_UNUSED,
-	 unsigned long word2 ATTRIBUTE_UNUSED, disassemble_info* info)
+put_abs (uint32_t word1,
+	 uint32_t word2,
+     disassemble_info* info)
 {
-#ifdef IN_GDB
-  return;
-#else
   int len;
 
   switch ((word1 >> 28) & 0xf)
@@ -926,5 +924,4 @@ put_abs (unsigned long word1 ATTRIBUTE_UNUSED,
     (*info->fprintf_func) (info->stream, "%08x %08x\t", word1, word2);
   else
     (*info->fprintf_func) (info->stream, "%08x         \t", word1);
-#endif
 }
