@@ -33,7 +33,8 @@
    the instruction generated (a CTRL-format 'call') should have its relocation
    specially flagged for link-time replacement with a 'bal' or 'calls' if
    appropriate.  */ 
-
+#ifndef OPCODE_I960_H
+#define OPCODE_I960_H
 #define CTRL	0
 #define COBR	1
 #define COJ	2
@@ -522,4 +523,4 @@ const struct i960_opcode i960_opcodes[] = {
 	{ 0,		NULL,		0,	0,	0, { 0, 0, 0 }	}
 };
 
- /* end of i960-opcode.h */
+#endif /* OPCODE_I960_H */

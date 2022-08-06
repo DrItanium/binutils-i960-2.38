@@ -53,7 +53,7 @@ int
 print_insn_i960 (bfd_vma memaddr, disassemble_info *info)
 {
     unsigned int word1, word2 = 0xdeadbeef;
-    bfd_byte buffer[8];
+    bfd_byte buffer[4];
     int status;
 
     //stream = info->stream;
@@ -81,13 +81,13 @@ print_insn_i960 (bfd_vma memaddr, disassemble_info *info)
         case 0xb:
         case 0xc:
             /* Read word2 by overwriting the buffer.  */
+            /* Attempt to read the next word, read_memory_func can fail given the disassembly info
+             * so don't worry and just break. However, on success we need to overwrite word2 */
             status = (*info->read_memory_func) (memaddr + 4, buffer, 4, info);
-            if (status != 0)
-            {
-                (*info->memory_error_func) (status, memaddr, info);
-                return -1;
+            if (status == 0) {
+                /* okay so we got more bytes, overwrite word2 */
+                word2 = bfd_getl32 (buffer);
             }
-            word2 = bfd_getl32 (buffer);
             break;
     }
 
