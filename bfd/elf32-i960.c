@@ -27,11 +27,6 @@
 
 #define USE_REL 1
 
-#define bfd_elf32_bfd_reloc_type_lookup	elf32_i960_reloc_type_lookup
-#define bfd_elf32_bfd_reloc_name_lookup \
-  elf32_i960_reloc_name_lookup
-#define elf_info_to_howto		elf32_i960_info_to_howto
-#define elf_info_to_howto_rel		elf32_i960_info_to_howto_rel
 
 /* ELF relocs are against symbols.  If we are producing relocatable
    output, and the reloc is against an external symbol, and nothing
@@ -135,14 +130,15 @@ elf32_i960_info_to_howto_rel (bfd *abfd ATTRIBUTE_UNUSED,
   type = (enum elf_i960_reloc_type) ELF32_R_TYPE (dst->r_info);
 
   /* PR 17521: file: 9609b8d6.  */
-  if (type >= R_960_max)
-    {
-      /* xgettext:c-format */
-      _bfd_error_handler (_("%pB: invalid i960 reloc number: %d"), abfd, type);
-      type = 0;
+    if (type >= R_960_max) {
+        /* xgettext:c-format */
+        _bfd_error_handler (_("%pB: invalid i960 reloc number: %d"), abfd, type);
+        type = 0;
+        return false;
     }
 
   cache_ptr->howto = &elf_howto_table[(int) type];
+  return true;
 }
 
 static reloc_howto_type *
@@ -170,6 +166,15 @@ elf32_i960_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
 #define TARGET_LITTLE_NAME	"elf32-i960"
 #define ELF_ARCH		bfd_arch_i960
 #define ELF_MACHINE_CODE	EM_960
-#define ELF_MAXPAGESIZE  	1 /* FIXME: This number is wrong,  It should be the page size in bytes.  */
+/*
+ * while the i960 doesn't always support an MMU, it actually does in the protected architecture
+ * but leave this alone for now
+*/
+#define ELF_MAXPAGESIZE  	1
+
+#define bfd_elf32_bfd_reloc_type_lookup	    elf32_i960_reloc_type_lookup
+#define bfd_elf32_bfd_reloc_name_lookup     elf32_i960_reloc_name_lookup
+#define elf_info_to_howto		            elf32_i960_info_to_howto
+#define elf_info_to_howto_rel		        elf32_i960_info_to_howto_rel
 
 #include "elf32-target.h"
