@@ -44,35 +44,35 @@ static void regop (int, int, int, int, disassemble_info*);
 static void invalid (int, disassemble_info*);
 static int pinsn (bfd_vma, uint32_t, uint32_t, disassemble_info*);
 static void put_abs (uint32_t, uint32_t, disassemble_info*);
+static int get_opcode_high4bits(uint32_t);
 
-
+int
+get_opcode_high4bits(uint32_t word) {
+    return (word >> 28) & 0x0F;
+}
 /* Print the i960 instruction at address 'memaddr' in debugged memory,
    on INFO->STREAM.  Returns length of the instruction, in bytes.  */
 
 int
 print_insn_i960 (bfd_vma memaddr, disassemble_info *info)
 {
-    unsigned int word1, word2 = 0xdeadbeef;
+    uint32_t word2 = 0xdeadbeef;
     bfd_byte buffer[4];
-    int status;
-
-    //stream = info->stream;
 
     /* Read word1.  Only read word2 if the instruction
        needs it, to prevent reading past the end of a section.  */
 
-    status = (*info->read_memory_func) (memaddr, buffer, 4, info);
+    int status = (*info->read_memory_func) (memaddr, buffer, 4, info);
     if (status != 0)
     {
         (*info->memory_error_func) (status, memaddr, info);
         return -1;
     }
 
-    word1 = bfd_getl32 (buffer);
+    uint32_t word1 = bfd_getl32 (buffer);
 
     /* Divide instruction set into classes based on high 4 bits of opcode.  */
-    switch ( (word1 >> 28) & 0xf )
-    {
+    switch (get_opcode_high4bits(word1)) {
         default:
             break;
         case 0x8:
@@ -123,34 +123,33 @@ pinsn (bfd_vma memaddr, uint32_t word1, uint32_t word2, disassemble_info* info)
   put_abs (word1, word2, info);
 
   /* Divide instruction set into classes based on high 4 bits of opcode.  */
-  switch ((word1 >> 28) & 0xf)
-    {
-    case 0x0:
-    case 0x1:
-      ctrl (memaddr, word1, word2, info);
-      break;
-    case 0x2:
-    case 0x3:
-      cobr (memaddr, word1, word2, info);
-      break;
-    case 0x5:
-    case 0x6:
-    case 0x7:
-      reg (word1, info);
-      break;
-    case 0x8:
-    case 0x9:
-    case 0xa:
-    case 0xb:
-    case 0xc:
-      instr_len = mem (memaddr, word1, word2, 0, info);
-      break;
-    default:
-      /* Invalid instruction, print as data word.  */
-      invalid (word1, info);
-      break;
+    switch (get_opcode_high4bits(word1)) {
+        case 0x0:
+        case 0x1:
+            ctrl (memaddr, word1, word2, info);
+            break;
+        case 0x2:
+        case 0x3:
+            cobr (memaddr, word1, word2, info);
+            break;
+        case 0x5:
+        case 0x6:
+        case 0x7:
+            reg (word1, info);
+            break;
+        case 0x8:
+        case 0x9:
+        case 0xa:
+        case 0xb:
+        case 0xc:
+            instr_len = mem (memaddr, word1, word2, 0, info);
+            break;
+        default:
+            /* Invalid instruction, print as data word.  */
+            invalid (word1, info);
+            break;
     }
-  return instr_len;
+    return instr_len;
 }
 
 /* CTRL format.. */
@@ -158,7 +157,6 @@ pinsn (bfd_vma memaddr, uint32_t word1, uint32_t word2, disassemble_info* info)
 static void
 ctrl (bfd_vma memaddr, uint32_t word1, uint32_t word2 ATTRIBUTE_UNUSED, disassemble_info* info)
 {
-  int i;
   static const struct tabent ctrl_tab[] = {
     { NULL,		0, },	/* 0x00 */
     { NULL,		0, },	/* 0x01 */
@@ -194,7 +192,7 @@ ctrl (bfd_vma memaddr, uint32_t word1, uint32_t word2 ATTRIBUTE_UNUSED, disassem
     { "faulto",		0, },	/* 0x1f */
   };
 
-  i = (word1 >> 24) & 0xff;
+  int i = (word1 >> 24) & 0xff;
   if ((ctrl_tab[i].name == NULL) || ((word1 & 1) != 0))
     {
       invalid (word1, info);
@@ -905,7 +903,7 @@ put_abs (uint32_t word1,
 {
   int len;
 
-  switch ((word1 >> 28) & 0xf)
+  switch (get_opcode_high4bits(word1))
     {
     case 0x8:
     case 0x9:
