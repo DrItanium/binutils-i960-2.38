@@ -30,71 +30,69 @@ static const char *const reg_names[] = {
 };
 
 
-static FILE *stream;		/* Output goes here */
-static struct disassemble_info *info;
-static void print_addr (bfd_vma);
-static void ctrl (bfd_vma, unsigned long, unsigned long);
-static void cobr (bfd_vma, unsigned long, unsigned long);
-static void reg (unsigned long);
-static int mem (bfd_vma, unsigned long, unsigned long, int);
-static void ea (bfd_vma, int, const char *, const char *, int, unsigned int);
-static void dstop (int, int, int);
-static void regop (int, int, int, int);
-static void invalid (int);
-static int pinsn (bfd_vma, unsigned long, unsigned long);
-static void put_abs (unsigned long, unsigned long);
+//static FILE *stream;		/* Output goes here */
+//static struct disassemble_info *info;
+static void print_addr (bfd_vma, disassemble_info*);
+static void ctrl (bfd_vma, unsigned long, unsigned long, disassemble_info*);
+static void cobr (bfd_vma, unsigned long, unsigned long, disassemble_info*);
+static void reg (unsigned long, disassemble_info*);
+static int mem (bfd_vma, unsigned long, unsigned long, int, disassemble_info*);
+static void ea (bfd_vma, int, const char *, const char *, int, unsigned int, disassemble_info*);
+static void dstop (int, int, int, disassemble_info*);
+static void regop (int, int, int, int, disassemble_info*);
+static void invalid (int, disassemble_info*);
+static int pinsn (bfd_vma, unsigned long, unsigned long, disassemble_info*);
+static void put_abs (unsigned long, unsigned long, disassemble_info*);
 
 
 /* Print the i960 instruction at address 'memaddr' in debugged memory,
    on INFO->STREAM.  Returns length of the instruction, in bytes.  */
 
 int
-print_insn_i960 (bfd_vma memaddr, struct disassemble_info *info_arg)
+print_insn_i960 (bfd_vma memaddr, disassemble_info *info)
 {
-  unsigned int word1, word2 = 0xdeadbeef;
-  bfd_byte buffer[8];
-  int status;
+    unsigned int word1, word2 = 0xdeadbeef;
+    bfd_byte buffer[8];
+    int status;
 
-  info = info_arg;
-  stream = info->stream;
+    //stream = info->stream;
 
-  /* Read word1.  Only read word2 if the instruction
-     needs it, to prevent reading past the end of a section.  */
+    /* Read word1.  Only read word2 if the instruction
+       needs it, to prevent reading past the end of a section.  */
 
-  status = (*info->read_memory_func) (memaddr, (bfd_byte *) buffer, 4, info);
-  if (status != 0)
+    status = (*info->read_memory_func) (memaddr, buffer, 4, info);
+    if (status != 0)
     {
-      (*info->memory_error_func) (status, memaddr, info);
-      return -1;
+        (*info->memory_error_func) (status, memaddr, info);
+        return -1;
     }
 
-  word1 = bfd_getl32 (buffer);
+    word1 = bfd_getl32 (buffer);
 
-  /* Divide instruction set into classes based on high 4 bits of opcode.  */
-  switch ( (word1 >> 28) & 0xf )
+    /* Divide instruction set into classes based on high 4 bits of opcode.  */
+    switch ( (word1 >> 28) & 0xf )
     {
-    default:
-      break;
-    case 0x8:
-    case 0x9:
-    case 0xa:
-    case 0xb:
-    case 0xc:
-      /* Read word2.  */
-      status = (*info->read_memory_func)
-	(memaddr + 4, (bfd_byte *) (buffer + 4), 4, info);
-      if (status != 0)
-	{
-	  (*info->memory_error_func) (status, memaddr, info);
-	  return -1;
-	}
-      word2 = bfd_getl32 (buffer + 4);
-      break;
+        default:
+            break;
+        case 0x8:
+        case 0x9:
+        case 0xa:
+        case 0xb:
+        case 0xc:
+            /* Read word2 by overwriting the buffer.  */
+            status = (*info->read_memory_func) (memaddr + 4, buffer, 4, info);
+            if (status != 0)
+            {
+                (*info->memory_error_func) (status, memaddr, info);
+                return -1;
+            }
+            word2 = bfd_getl32 (buffer);
+            break;
     }
 
-  return pinsn( memaddr, word1, word2 );
+    return pinsn( memaddr, word1, word2, info);
 }
-
+
 #define IN_GDB
 
 /*****************************************************************************
@@ -117,39 +115,39 @@ struct sparse_tabent {
 };
 
 static int
-pinsn (bfd_vma memaddr, unsigned long word1, unsigned long word2)
+pinsn (bfd_vma memaddr, unsigned long word1, unsigned long word2, disassemble_info* info)
 {
   int instr_len;
 
   instr_len = 4;
-  put_abs (word1, word2);
+  put_abs (word1, word2, info);
 
   /* Divide instruction set into classes based on high 4 bits of opcode.  */
   switch ((word1 >> 28) & 0xf)
     {
     case 0x0:
     case 0x1:
-      ctrl (memaddr, word1, word2);
+      ctrl (memaddr, word1, word2, info);
       break;
     case 0x2:
     case 0x3:
-      cobr (memaddr, word1, word2);
+      cobr (memaddr, word1, word2, info);
       break;
     case 0x5:
     case 0x6:
     case 0x7:
-      reg (word1);
+      reg (word1, info);
       break;
     case 0x8:
     case 0x9:
     case 0xa:
     case 0xb:
     case 0xc:
-      instr_len = mem (memaddr, word1, word2, 0);
+      instr_len = mem (memaddr, word1, word2, 0, info);
       break;
     default:
       /* Invalid instruction, print as data word.  */
-      invalid (word1);
+      invalid (word1, info);
       break;
     }
   return instr_len;
@@ -158,7 +156,7 @@ pinsn (bfd_vma memaddr, unsigned long word1, unsigned long word2)
 /* CTRL format.. */
 
 static void
-ctrl (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED)
+ctrl (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED, disassemble_info* info)
 {
   int i;
   static const struct tabent ctrl_tab[] = {
@@ -199,14 +197,14 @@ ctrl (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED
   i = (word1 >> 24) & 0xff;
   if ((ctrl_tab[i].name == NULL) || ((word1 & 1) != 0))
     {
-      invalid (word1);
+      invalid (word1, info);
       return;
     }
 
-  (*info->fprintf_func) (stream, "%s", ctrl_tab[i].name);
+  (*info->fprintf_func) (info->stream, "%s", ctrl_tab[i].name);
   if (word1 & 2)
     /* Predicts branch not taken.  */
-    (*info->fprintf_func) (stream, ".f");
+    (*info->fprintf_func) (info->stream, ".f");
 
   if (ctrl_tab[i].numops == 1)
     {
@@ -219,15 +217,15 @@ ctrl (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED
 	  word1 |= (-1 & ~0xffffff);	/* Sign extend.  */
 	}
 
-      (*info->fprintf_func) (stream, "\t");
-      print_addr (word1 + memaddr);
+      (*info->fprintf_func) (info->stream, "\t");
+      print_addr (word1 + memaddr, info);
     }
 }
 
 /* COBR format.  */
 
 static void
-cobr (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED)
+cobr (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED, disassemble_info* info)
 {
   int src1;
   int src2;
@@ -271,35 +269,35 @@ cobr (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED
   i = ((word1 >> 24) & 0xff) - 0x20;
   if (cobr_tab[i].name == NULL)
     {
-      invalid (word1);
+      invalid (word1, info);
       return;
     }
 
-  (*info->fprintf_func) (stream, "%s", cobr_tab[i].name);
+  (*info->fprintf_func) (info->stream, "%s", cobr_tab[i].name);
 
   /* Predicts branch not taken.  */
   if (word1 & 2)
-    (*info->fprintf_func) (stream, ".f");
+    (*info->fprintf_func) (info->stream, ".f");
 
-  (*info->fprintf_func) (stream, "\t");
+  (*info->fprintf_func) (info->stream, "\t");
 
   src1 = (word1 >> 19) & 0x1f;
   src2 = (word1 >> 14) & 0x1f;
 
   if (word1 & 0x02000)
     /* M1 is 1 */
-    (*info->fprintf_func) (stream, "%d", src1);
+    (*info->fprintf_func) (info->stream, "%d", src1);
   else
-    (*info->fprintf_func) (stream, "%s", reg_names[src1]);
+    (*info->fprintf_func) (info->stream, "%s", reg_names[src1]);
 
   if (cobr_tab[i].numops > 1)
     {
       if (word1 & 1)
 	/* S2 is 1.  */
-	(*info->fprintf_func) (stream, ",sf%d,", src2);
+	(*info->fprintf_func) (info->stream, ",sf%d,", src2);
       else
 	/* S1 is 0.  */
-	(*info->fprintf_func) (stream, ",%s,", reg_names[src2]);
+	(*info->fprintf_func) (info->stream, ",%s,", reg_names[src2]);
 
       /* Extract displacement and convert to address.  */
       word1 &= 0x00001ffc;
@@ -307,7 +305,7 @@ cobr (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED
 	/* Negative displacement.  */
 	word1 |= (-1 & ~0x1fff);	/* Sign extend.  */
 
-      print_addr (memaddr + word1);
+      print_addr (memaddr + word1, info);
     }
 }
 
@@ -315,7 +313,7 @@ cobr (bfd_vma memaddr, unsigned long word1, unsigned long word2 ATTRIBUTE_UNUSED
 /* Returns instruction length: 4 or 8.  */
 
 static int
-mem (bfd_vma memaddr, unsigned long word1, unsigned long word2, int noprint)
+mem (bfd_vma memaddr, unsigned long word1, unsigned long word2, int noprint, disassemble_info* info)
 {
   int i, j;
   int len;
@@ -390,11 +388,11 @@ mem (bfd_vma memaddr, unsigned long word1, unsigned long word2, int noprint)
 
   if ((mem_tab[i].name == NULL) || (mode == 6))
     {
-      invalid (word1);
+      invalid (word1, info);
       return len;
     }
 
-  (*info->fprintf_func) (stream, "%s\t", mem_tab[i].name);
+  (*info->fprintf_func) (info->stream, "%s\t", mem_tab[i].name);
 
   reg1 = reg_names[ (word1 >> 19) & 0x1f ];	/* MEMB only */
   reg2 = reg_names[ (word1 >> 14) & 0x1f ];
@@ -406,17 +404,17 @@ mem (bfd_vma memaddr, unsigned long word1, unsigned long word2, int noprint)
     case 2: /* LOAD INSTRUCTION */
       if (mode & 4)
 	{			/* MEMB FORMAT */
-	  ea (memaddr, mode, reg2, reg3, word1, word2);
-	  (*info->fprintf_func) (stream, ",%s", reg1);
+	  ea (memaddr, mode, reg2, reg3, word1, word2, info);
+	  (*info->fprintf_func) (info->stream, ",%s", reg1);
 	}
       else
 	{				/* MEMA FORMAT */
-	  (*info->fprintf_func) (stream, "0x%x", (unsigned) offset);
+	  (*info->fprintf_func) (info->stream, "0x%x", (unsigned) offset);
 
 	  if (mode & 8)
-	    (*info->fprintf_func) (stream, "(%s)", reg2);
+	    (*info->fprintf_func) (info->stream, "(%s)", reg2);
 
-	  (*info->fprintf_func)(stream, ",%s", reg1);
+	  (*info->fprintf_func)(info->stream, ",%s", reg1);
 	}
       break;
 
@@ -424,16 +422,16 @@ mem (bfd_vma memaddr, unsigned long word1, unsigned long word2, int noprint)
       if (mode & 4)
 	{
 	  /* MEMB FORMAT */
-	  (*info->fprintf_func) (stream, "%s,", reg1);
-	  ea (memaddr, mode, reg2, reg3, word1, word2);
+	  (*info->fprintf_func) (info->stream, "%s,", reg1);
+	  ea (memaddr, mode, reg2, reg3, word1, word2, info);
 	}
       else
 	{
 	  /* MEMA FORMAT */
-	  (*info->fprintf_func) (stream, "%s,0x%x", reg1, (unsigned) offset);
+	  (*info->fprintf_func) (info->stream, "%s,0x%x", reg1, (unsigned) offset);
 
 	  if (mode & 8)
-	    (*info->fprintf_func) (stream, "(%s)", reg2);
+	    (*info->fprintf_func) (info->stream, "(%s)", reg2);
 	}
       break;
 
@@ -441,14 +439,14 @@ mem (bfd_vma memaddr, unsigned long word1, unsigned long word2, int noprint)
       if (mode & 4)
 	{
 	  /* MEMB FORMAT */
-	  ea (memaddr, mode, reg2, reg3, word1, word2);
+	  ea (memaddr, mode, reg2, reg3, word1, word2, info);
 	}
       else
 	{
 	  /* MEMA FORMAT */
-	  (*info->fprintf_func) (stream, "0x%x", (unsigned) offset);
+	  (*info->fprintf_func) (info->stream, "0x%x", (unsigned) offset);
 	  if (mode & 8)
-	    (*info->fprintf_func) (stream, "(%s)", reg2);
+	    (*info->fprintf_func) (info->stream, "(%s)", reg2);
 	}
       break;
     }
@@ -459,7 +457,7 @@ mem (bfd_vma memaddr, unsigned long word1, unsigned long word2, int noprint)
 /* REG format.  */
 
 static void
-reg (unsigned long word1)
+reg (unsigned long word1, disassemble_info* info)
 {
   int i, j;
   int opcode;
@@ -701,7 +699,7 @@ reg (unsigned long word1)
 
   if ((opcode<REG_MIN) || (opcode>REG_MAX) || (reg_tab[i].name==NULL))
     {
-      invalid (word1);
+      invalid (word1, info);
       return;
     }
 
@@ -764,7 +762,7 @@ reg (unsigned long word1)
 
 static void
 ea (bfd_vma memaddr, int mode, const char *reg2, const char *reg3, int word1,
-    unsigned int word2)
+    unsigned int word2, disassemble_info* info)
 {
   int scale;
   static const int scale_tab[] = { 1, 2, 4, 8, 16 };
@@ -773,7 +771,7 @@ ea (bfd_vma memaddr, int mode, const char *reg2, const char *reg3, int word1,
 
   if ((scale > 4) || (((word1 >> 5) & 0x03) != 0))
     {
-      invalid (word1);
+      invalid (word1, info);
       return;
     }
   scale = scale_tab[scale];
@@ -781,40 +779,40 @@ ea (bfd_vma memaddr, int mode, const char *reg2, const char *reg3, int word1,
   switch (mode)
     {
     case 4:						/* (reg) */
-      (*info->fprintf_func)( stream, "(%s)", reg2 );
+      (*info->fprintf_func)( info->stream, "(%s)", reg2 );
       break;
     case 5:						/* displ+8(ip) */
-      print_addr (word2 + 8 + memaddr);
+      print_addr (word2 + 8 + memaddr, info);
       break;
     case 7:						/* (reg)[index*scale] */
       if (scale == 1)
-	(*info->fprintf_func) (stream, "(%s)[%s]", reg2, reg3);
+	(*info->fprintf_func) (info->stream, "(%s)[%s]", reg2, reg3);
       else
-	(*info->fprintf_func) (stream, "(%s)[%s*%d]", reg2, reg3, scale);
+	(*info->fprintf_func) (info->stream, "(%s)[%s*%d]", reg2, reg3, scale);
       break;
     case 12:					/* displacement */
-      print_addr ((bfd_vma) word2);
+      print_addr ((bfd_vma) word2, info);
       break;
     case 13:					/* displ(reg) */
-      print_addr ((bfd_vma) word2);
-      (*info->fprintf_func) (stream, "(%s)", reg2);
+      print_addr ((bfd_vma) word2, info);
+      (*info->fprintf_func) (info->stream, "(%s)", reg2);
       break;
     case 14:					/* displ[index*scale] */
-      print_addr ((bfd_vma) word2);
+      print_addr ((bfd_vma) word2, info);
       if (scale == 1)
-	(*info->fprintf_func) (stream, "[%s]", reg3);
+	(*info->fprintf_func) (info->stream, "[%s]", reg3);
       else
-	(*info->fprintf_func) (stream, "[%s*%d]", reg3, scale);
+	(*info->fprintf_func) (info->stream, "[%s*%d]", reg3, scale);
       break;
     case 15:				/* displ(reg)[index*scale] */
-      print_addr ((bfd_vma) word2);
+      print_addr ((bfd_vma) word2, info);
       if (scale == 1)
-	(*info->fprintf_func) (stream, "(%s)[%s]", reg2, reg3);
+	(*info->fprintf_func) (info->stream, "(%s)[%s]", reg2, reg3);
       else
-	(*info->fprintf_func) (stream, "(%s)[%s*%d]", reg2, reg3, scale);
+	(*info->fprintf_func) (info->stream, "(%s)[%s*%d]", reg2, reg3, scale);
       break;
     default:
-      invalid (word1);
+      invalid (word1, info);
       return;
     }
 }
@@ -823,7 +821,7 @@ ea (bfd_vma memaddr, int mode, const char *reg2, const char *reg3, int word1,
 /* Register Instruction Operand.  */
 
 static void
-regop (int mode, int spec, int fp_reg, int fp)
+regop (int mode, int spec, int fp_reg, int fp, disassemble_info* info)
 {
   if (fp)
     {
@@ -833,26 +831,26 @@ regop (int mode, int spec, int fp_reg, int fp)
 	  /* FP operand.  */
 	  switch (fp_reg)
 	    {
-	    case 0:  (*info->fprintf_func) (stream, "fp0");
+	    case 0:  (*info->fprintf_func) (info->stream, "fp0");
 	      break;
-	    case 1:  (*info->fprintf_func) (stream, "fp1");
+	    case 1:  (*info->fprintf_func) (info->stream, "fp1");
 	      break;
-	    case 2:  (*info->fprintf_func) (stream, "fp2");
+	    case 2:  (*info->fprintf_func) (info->stream, "fp2");
 	      break;
-	    case 3:  (*info->fprintf_func) (stream, "fp3");
+	    case 3:  (*info->fprintf_func) (info->stream, "fp3");
 	      break;
-	    case 16: (*info->fprintf_func) (stream, "0f0.0");
+	    case 16: (*info->fprintf_func) (info->stream, "0f0.0");
 	      break;
-	    case 22: (*info->fprintf_func) (stream, "0f1.0");
+	    case 22: (*info->fprintf_func) (info->stream, "0f1.0");
 	      break;
-	    default: (*info->fprintf_func) (stream, "?");
+	    default: (*info->fprintf_func) (info->stream, "?");
 	      break;
 	    }
 	}
       else
 	{
 	  /* Non-FP register.  */
-	  (*info->fprintf_func) (stream, "%s", reg_names[fp_reg]);
+	  (*info->fprintf_func) (info->stream, "%s", reg_names[fp_reg]);
 	}
     }
   else
@@ -861,15 +859,15 @@ regop (int mode, int spec, int fp_reg, int fp)
       if (mode == 1)
 	{
 	  /* Literal.  */
-	  (*info->fprintf_func) (stream, "%d", fp_reg);
+	  (*info->fprintf_func) (info->stream, "%d", fp_reg);
 	}
       else
 	{
 	  /* Register.  */
 	  if (spec == 0)
-	    (*info->fprintf_func) (stream, "%s", reg_names[fp_reg]);
+	    (*info->fprintf_func) (info->stream, "%s", reg_names[fp_reg]);
 	  else
-	    (*info->fprintf_func) (stream, "sf%d", fp_reg);
+	    (*info->fprintf_func) (info->stream, "sf%d", fp_reg);
 	}
     }
 }
@@ -877,32 +875,32 @@ regop (int mode, int spec, int fp_reg, int fp)
 /* Register Instruction Destination Operand.  */
 
 static void
-dstop (int mode, int dest_reg, int fp)
+dstop (int mode, int dest_reg, int fp, disassemble_info* info)
 {
   /* 'dst' operand can't be a literal. On non-FP instructions,  register
      mode is assumed and "m3" acts as if were "s3";  on FP-instructions,
      sf registers are not allowed so m3 acts normally.  */
   if (fp)
-    regop (mode, 0, dest_reg, fp);
+    regop (mode, 0, dest_reg, fp, info);
   else
-    regop (0, mode, dest_reg, fp);
+    regop (0, mode, dest_reg, fp, info);
 }
 
 static void
-invalid (int word1)
+invalid (int word1, disassemble_info* info)
 {
-  (*info->fprintf_func) (stream, ".word\t0x%08x", (unsigned) word1);
+  (*info->fprintf_func) (info->stream, ".word\t0x%08x", (unsigned) word1);
 }
 
 static void
-print_addr (bfd_vma a)
+print_addr (bfd_vma a, disassemble_info* info)
 {
   (*info->print_address_func) (a, info);
 }
 
 static void
 put_abs (unsigned long word1 ATTRIBUTE_UNUSED,
-	 unsigned long word2 ATTRIBUTE_UNUSED)
+	 unsigned long word2 ATTRIBUTE_UNUSED, disassemble_info* info)
 {
 #ifdef IN_GDB
   return;
@@ -917,7 +915,7 @@ put_abs (unsigned long word1 ATTRIBUTE_UNUSED,
     case 0xb:
     case 0xc:
       /* MEM format instruction.  */
-      len = mem (0, word1, word2, 1);
+      len = mem (0, word1, word2, 1, info);
       break;
     default:
       len = 4;
@@ -925,8 +923,8 @@ put_abs (unsigned long word1 ATTRIBUTE_UNUSED,
     }
 
   if (len == 8)
-    (*info->fprintf_func) (stream, "%08x %08x\t", word1, word2);
+    (*info->fprintf_func) (info->stream, "%08x %08x\t", word1, word2);
   else
-    (*info->fprintf_func) (stream, "%08x         \t", word1);
+    (*info->fprintf_func) (info->stream, "%08x         \t", word1);
 #endif
 }
