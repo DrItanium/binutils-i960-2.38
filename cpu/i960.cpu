@@ -17,3 +17,24 @@
 ; along with this program; if not, write to the Free Software
 ; Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
 ; MA 02110-1301, USA.
+
+(include "simplify.inc")
+; The i960 CPU refers to a family of RISC processors developed by Intel in the 1980s
+; from the ashes of the iAXP432 processor. It is meant to be simple and easy to develop for.
+; Meant to support many different use cases from embedded to general purpose computation.
+(define-arch
+    (name i960)
+    (comment "Intel i960 CPU family")
+    (default-alignment aligned)
+    (insn-lsb0? #t)
+    (machs i960:core i960:ka_sa i960:kb_sb i960:mc i960:xa i960:ca i960:jx i960:hx)
+    (isas i960)
+)
+
+(define-isa
+(name i960)
+(base-insn-bitsize 32)
+(default-insn-bitsize 32)
+(default-insn-word-bitsize 32)
+)
+
