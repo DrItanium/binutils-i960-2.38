@@ -177,4 +177,25 @@ elf32_i960_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
 #define elf_info_to_howto		            elf32_i960_info_to_howto
 #define elf_info_to_howto_rel		        elf32_i960_info_to_howto_rel
 
+/*
+#define elf_backend_want_got_plt 1
+#define elf_backend_plt_readonly 1
+#define elf_backend_can_gc_sections 1
+#define elf_backend_rela_normal 1
+#define elf_backend_can_refcount 1
+#define elf_backend_relocate_section
+#define elf_backend_gc_mark_hook
+#define elf_backend_gc_sweep_hook
+#define elf_backend_check_relocs
+#define elf_backend_final_write_processing
+#define elf_backend_object_p
+#define elf_backend_create_dynamic_sections
+#define elf_backend_adjust_dynamic_symbol
+#define elf_backend_size_dynamic_sections
+#define elf_backend_omit_section_dynsym
+#define elf_backend_finish_dynamic_sections
+#define elf_backend_reloc_type_class
+#define elf_backend_want_plt_sym
+#define elf_backend_got_header_size
+ */
 #include "elf32-target.h"
