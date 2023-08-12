@@ -388,8 +388,6 @@ const struct i960_opcode i960_opcodes[] = {
 	{ R_2D(0x6c3),	"cvtzril",	I_FP,	REG,	2, { FL, R2, 0 } },
 	{ R_2D(0x6c9),	"movr",		I_FP,	REG,	2, { FL, F, 0 } },
 	{ R_2D(0x6d9),	"movrl",	I_FP,	REG,	2, { FL2,F2, 0 } },
-    /* accidental discovery via a typo, use the opcode value as the name! */
-	{ R_2D(0x6e1),	"x6e1",   I_FP,	REG,	2, { FL4,F4, 0 } }, 
 	{ R_3(0x6e2),	"cpysre",	I_FP,	REG,	3, { FL4,FL4,F4 } },
 	{ R_3(0x6e3),	"cpyrsre",	I_FP,	REG,	3, { FL4,FL4,F4 } },
     /* this was originally 0x6e1 which is wrong but does not generate a fault! */
@@ -520,6 +518,11 @@ const struct i960_opcode i960_opcodes[] = {
 
 	/* Hx extensions.  */
 	{ 0xac000000,	"dcinva",	I_HX,	MEM1,	1, {   M,  0, 0 } },
+
+    /* A seemingly bogus opcode that I want to use for testing purposes! */
+	{ R_2D(0x6e0),	"op_x6e0",  I_FP,	REG,	2, { FL4,F4, 0 } }, 
+    /* accidental discovery via a typo, use the opcode value as the name, it does not generate a fault! */
+	{ R_2D(0x6e1),	"op_x6e1",  I_FP,	REG,	2, { FL4,F4, 0 } }, 
 
 	/* END OF TABLE */
 
