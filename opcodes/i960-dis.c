@@ -617,7 +617,7 @@ reg (uint32_t word1, disassemble_info* info)
     { 0x6c3,	"Fcvtzril",	-2 },
     { 0x6c9,	"Fmovr",	-2 },
     { 0x6d9,	"Fmovrl",	-2 },
-    { 0x6e1,	"F0x6e1",-2 },
+    { 0x6e1,	"Fx6e1",-2 },
     { 0x6e2,	"Fcpysre",	3 },
     { 0x6e3,	"Fcpyrsre",	3 },
     { 0x6e9,	"Fmovre",	-2 },
