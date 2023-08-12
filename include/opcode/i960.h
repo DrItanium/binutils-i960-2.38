@@ -388,9 +388,12 @@ const struct i960_opcode i960_opcodes[] = {
 	{ R_2D(0x6c3),	"cvtzril",	I_FP,	REG,	2, { FL, R2, 0 } },
 	{ R_2D(0x6c9),	"movr",		I_FP,	REG,	2, { FL, F, 0 } },
 	{ R_2D(0x6d9),	"movrl",	I_FP,	REG,	2, { FL2,F2, 0 } },
-	{ R_2D(0x6e1),	"movre",	I_FP,	REG,	2, { FL4,F4, 0 } },
+    /* accidental discovery via a typo! */
+	{ R_2D(0x6e1),	"undef0",   I_FP,	REG,	2, { FL4,F4, 0 } }, 
 	{ R_3(0x6e2),	"cpysre",	I_FP,	REG,	3, { FL4,FL4,F4 } },
 	{ R_3(0x6e3),	"cpyrsre",	I_FP,	REG,	3, { FL4,FL4,F4 } },
+    /* this was originally 0x6e1 which is wrong but does not generate a fault! */
+	{ R_2D(0x6e9),	"movre",	I_FP,	REG,	2, { FL4,F4, 0 } }, 
 	{ R_3(0x78b),	"divr",		I_FP,	REG,	3, { FL, FL, F } },
 	{ R_3(0x78c),	"mulr",		I_FP,	REG,	3, { FL, FL, F } },
 	{ R_3(0x78d),	"subr",		I_FP,	REG,	3, { FL, FL, F } },
