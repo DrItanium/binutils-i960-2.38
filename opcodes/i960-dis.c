@@ -617,11 +617,12 @@ reg (uint32_t word1, disassemble_info* info)
     { 0x6c3,	"Fcvtzril",	-2 },
     { 0x6c9,	"Fmovr",	-2 },
     { 0x6d9,	"Fmovrl",	-2 },
-    { 0x6e0,	"Fop_x6e0",-2 }, 
-    { 0x6e1,	"Fop_x6e1",-2 },
+    /* test opcode for sanity checking purposes! */
+    { 0x6e0,	"Fop_x6e0",-2 },  
+    /* the manuals are flat out WRONG! They state 0x6e9 as the opcode not 0x6e1 */
+    { 0x6e1,	"Fmovre",	-2 }, 
     { 0x6e2,	"Fcpysre",	3 },
     { 0x6e3,	"Fcpyrsre",	3 },
-    { 0x6e9,	"Fmovre",	-2 },
     { 0x701,	"mulo",		3 },
     { 0x708,	"remo",		3 },
     { 0x70b,	"divo",		3 },
