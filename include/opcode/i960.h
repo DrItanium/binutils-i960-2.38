@@ -522,9 +522,6 @@ const struct i960_opcode i960_opcodes[] = {
 	/* Hx extensions.  */
 	{ 0xac000000,	"dcinva",	I_HX,	MEM1,	1, {   M,  0, 0 } },
 
-    /* A seemingly bogus opcode that I want to use for testing purposes! */
-	{ R_2D(0x6e0),	"op_x6e0",  I_FP,	REG,	2, { FL4,F4, 0 } }, 
-
 	/* END OF TABLE */
 
 	{ 0,		NULL,		0,	0,	0, { 0, 0, 0 }	}
