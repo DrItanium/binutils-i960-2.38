@@ -325,6 +325,14 @@ regnames[] =
   { "fp2", 66 },
   { "fp3", 67 },
 
+  /* Encode the rv32 emulator names for simplicity */
+  { "rs1_index", 16 }, // g0
+  { "rs2_index", 17 },  // g1
+  { "rd_index", 18 }, // g2
+  { "rv32_imm", 19 }, // g3
+  { "rv32_fpr_base", 27 }, // g11
+  { "rv32_gpr_base", 28 }, // g12
+  { "rv32_pc", 29 }, // g13
   { NULL, 0 },				/* END OF LIST */
 };
 
