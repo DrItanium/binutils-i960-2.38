@@ -1,5 +1,9 @@
 *.o
 *.lo
+*.la
 *.stamp
 Makefile.in
 Makefile
+*.log
+*.cache
+*.a
