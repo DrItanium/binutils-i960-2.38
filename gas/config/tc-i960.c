@@ -333,6 +333,7 @@ regnames[] =
   { "t2", 6 }, // r6
   { "t3", 7 }, // r7
   { "func_addr", 8 }, // r8
+  { "dispatch_table_base", 8 }, // r8
   { "subfunc_addr", 9 }, // r9
   { "subsubfunc_addr", 10 }, // r10
   { "subsubsubfunc_addr", 11 }, // r11
@@ -397,6 +398,24 @@ aregs[] =
   /* For assembler internal use only: this number never appears in binary
      output.  */
   { "(ip)", IPREL },
+  { "(instruction)", 3 }, // r3
+  { "(t0)", 4 }, // r4
+  { "(t1)", 5 }, // r5
+  { "(t2)", 6 }, // r6
+  { "(t3)", 7 }, // r7
+  { "(dispatch_table_base)", 8 }, // r8
+  { "(func_addr)", 8 }, // r8
+  { "(subfunc_addr)", 9 }, // r9
+  { "(subsubfunc_addr)", 10 }, // r10
+  { "(subsubsubfunc_addr)", 11 }, // r11
+  { "(rs1)", 16 }, // g0
+  { "(rs2)", 17 },  // g1
+  { "(rd)", 18 }, // g2
+  { "(immediate)", 19 }, // g3
+  { "(fpr_base)", 27 }, // g11
+  { "(gpr_base)", 28 }, // g12
+  { "(pc)", 29 }, // g13
+  { "(lr)", 30 }, // g14
 
   { NULL, 0 },				/* END OF LIST */
 };
