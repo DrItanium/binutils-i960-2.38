@@ -332,11 +332,6 @@ regnames[] =
   { "t1", 5 }, // r5
   { "t2", 6 }, // r6
   { "t3", 7 }, // r7
-  { "func_addr", 8 }, // r8
-  { "dispatch_table_base", 8 }, // r8
-  { "subfunc_addr", 9 }, // r9
-  { "subsubfunc_addr", 10 }, // r10
-  { "subsubsubfunc_addr", 11 }, // r11
   { "rs1", 16 }, // g0
   { "rs2", 17 },  // g1
   { "rd", 18 }, // g2
@@ -403,11 +398,6 @@ aregs[] =
   { "(t1)", 5 }, // r5
   { "(t2)", 6 }, // r6
   { "(t3)", 7 }, // r7
-  { "(dispatch_table_base)", 8 }, // r8
-  { "(func_addr)", 8 }, // r8
-  { "(subfunc_addr)", 9 }, // r9
-  { "(subsubfunc_addr)", 10 }, // r10
-  { "(subsubsubfunc_addr)", 11 }, // r11
   { "(rs1)", 16 }, // g0
   { "(rs2)", 17 },  // g1
   { "(rd)", 18 }, // g2
