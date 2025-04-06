@@ -336,8 +336,7 @@ regnames[] =
   { "rs2", 9 },  // r9
   { "rd", 10 }, // r10
   { "immediate", 11 }, // r11
-  { "gpr_base", 12 }, // r12
-  { "pc", 13 }, // r13
+  { "pc", 12 }, // r12
   { NULL, 0 },				/* END OF LIST */
 };
 
@@ -400,8 +399,7 @@ aregs[] =
   { "(rs2)", 9 },  // r9
   { "(rd)", 10 }, // r10
   { "(immediate)", 11 }, // r11
-  { "(gpr_base)", 12 }, // r12
-  { "(pc)", 13 }, // r13
+  { "(pc)", 12 }, // r12
 
   { NULL, 0 },				/* END OF LIST */
 };
@@ -477,7 +475,7 @@ static int br_cnt;
 
 static void ctrl_fmt (const char *, long, int);
 
-
+
 void
 md_begin (void)
 {
