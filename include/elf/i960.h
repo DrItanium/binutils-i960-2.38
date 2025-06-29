@@ -32,6 +32,9 @@ START_RELOC_NUMBERS (elf_i960_reloc_type)
      RELOC_NUMBER (R_960_OPTCALL,   5)
      RELOC_NUMBER (R_960_OPTCALLX,  6)
      RELOC_NUMBER (R_960_OPTCALLXA, 7)
+     /* Custom Reloc Numbers for rv32 static translator start here */
+     RELOC_NUMBER (R_960_RV32_HI20, 8)
+     RELOC_NUMBER (R_960_RV32_LO12, 9)
 END_RELOC_NUMBERS (R_960_max)
 
 #endif /* _ELF_I960_H */

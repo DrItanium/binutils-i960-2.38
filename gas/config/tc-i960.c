@@ -60,7 +60,26 @@
         is based on a symbol, because it could be relocated at link time.
         The only time we use the 12-bit format is if an absolute value of
         less than 4096 is specified, in which case we need neither a fixup nor
-        a relocation directive.  */
+        a relocation directive.  
+
+    For rv32 emulation via static translation I need to provide some extra relocation kinds that
+    are only useful for better translation:
+
+    20-bit hi -- For auipc/lui emulation. We want to encode the upper 20-bits of an address
+    12-bit lo -- For addi etc emulation. We want to encode the lower 12-bits of the address. 
+                 
+
+    In all cases, this design will still use 32-bit memb formats for the most accurate emulation.
+    Normally, I would just ldconst in translation work but it isn't that simple as the compiler can
+    choose to break that up so partial components are necessary. 
+
+    lui ?dest, %hi(?sym) => lda (?sym & 0xFFFFF000), ?dest
+    addi ?dest, ?src1, %lo(?sym) => lda %lo(?sym)(?src1), ?dest
+
+    lui will use its own relocation of 20-bit hi 
+
+
+*/
 
 #include "as.h"
 
