@@ -1584,31 +1584,27 @@ cobr_fmt (/* arg[0]->opcode mnemonic, arg[1-3]->operands (ascii) */
   instr = opcode;
   n = oP->num_ops;
 
-  if (n >= 1)
-    {
+  if (n >= 1) {
       /* First operand (if any) of a COBR is always a register
-	 operand.  Parse it.  */
+         operand.  Parse it.  */
       parse_regop (&regop, arg[1], oP->operand[0]);
       instr |= (regop.n << 19) | (regop.mode << 13);
-    }
+  }
 
-  if (n >= 2)
-    {
+  if (n >= 2) {
       /* Second operand (if any) of a COBR is always a register
-	 operand.  Parse it.  */
+         operand.  Parse it.  */
       parse_regop (&regop, arg[2], oP->operand[1]);
       instr |= (regop.n << 14) | regop.special;
-    }
+  }
 
-  if (n < 3)
+  if (n < 3) {
     emit (instr);
-  else
-    {
-      if (instrument_branches)
-	{
-	  brcnt_emit ();
-	  colon (brlab_next ());
-	}
+  } else {
+      if (instrument_branches) {
+          brcnt_emit ();
+          colon (brlab_next ());
+      }
 
       /* A third operand to a COBR is always a displacement.  Parse
          it; if it's relaxable (a cobr "j" directive, or any cobr
@@ -1618,9 +1614,10 @@ cobr_fmt (/* arg[0]->opcode mnemonic, arg[1-3]->operands (ascii) */
       var_frag = !norelax || (oP->format == COJ);	/* TRUE or FALSE */
       get_cdisp (arg[3], "COBR", instr, 13, var_frag, 0);
 
-      if (instrument_branches)
-	brcnt_emit ();
-    }
+      if (instrument_branches) {
+          brcnt_emit ();
+      }
+  }
 }
 
 /* Assumptions about the passed-in text:
@@ -1655,92 +1652,89 @@ md_assemble (char *textP)
 
   n_ops = i_scan (textP, args);
 
-  if (n_ops == -1)
+  if (n_ops == -1) {
     return;			/* Error message already issued.  */
+  }
 
   /* Do "macro substitution" (sort of) on 'ldconst' pseudo-instruction.  */
-  if (!strcmp (args[0], "ldconst"))
-    {
+  if (!strcmp (args[0], "ldconst")) {
       n_ops = parse_ldconst (args);
-      if (n_ops == -1)
-	return;
-    }
+      if (n_ops == -1) {
+          return;
+      }
+  }
 
   /* Check for branch-prediction suffix on opcode mnemonic, strip it off.  */
   n = strlen (args[0]) - 1;
   branch_predict = 0;
   bp_bits = 0;
 
-  if (args[0][n - 1] == '.' && (args[0][n] == 't' || args[0][n] == 'f'))
-    {
+  if (args[0][n - 1] == '.' && (args[0][n] == 't' || args[0][n] == 'f')) {
       /* We could check here to see if the target architecture
-	 supports branch prediction, but why bother?  The bit will
-	 just be ignored by processors that don't use it.  */
+         supports branch prediction, but why bother?  The bit will
+         just be ignored by processors that don't use it.  */
       branch_predict = 1;
       bp_bits = (args[0][n] == 't') ? BP_TAKEN : BP_NOT_TAKEN;
       args[0][n - 1] = '\0';	/* Strip suffix from opcode mnemonic */
-    }
+  }
 
   /* Look up opcode mnemonic in table and check number of operands.
      Check that opcode is legal for the target architecture.  If all
      looks good, assemble instruction.  */
   oP = (struct i960_opcode *) str_hash_find (op_hash, args[0]);
-  if (!oP || !targ_has_iclass (oP->iclass))
+  if (!oP || !targ_has_iclass (oP->iclass)) {
     as_bad (_("invalid opcode, \"%s\"."), args[0]);
-  else if (n_ops != oP->num_ops)
-    as_bad (_("improper number of operands.  Expecting %d, got %d"),
-	    oP->num_ops, n_ops);
-  else
-    {
-      switch (oP->format)
-	{
-	case FBRA:
-	case CTRL:
-	  ctrl_fmt (args[1], oP->opcode | bp_bits, oP->num_ops);
-	  if (oP->format == FBRA)
-	    /* Now generate a 'bno' to same arg */
-	    ctrl_fmt (args[1], BNO | bp_bits, 1);
-	  break;
-	case COBR:
-	case COJ:
-	  cobr_fmt (args, oP->opcode | bp_bits, oP);
-	  break;
-	case REG:
-	  if (branch_predict)
-	    as_warn ("%s", bp_error_msg);
-	  reg_fmt (args, oP);
-	  break;
-	case MEM1:
-	  if (args[0][0] == 'c' && args[0][1] == 'a')
-	    {
-	      if (branch_predict)
-		as_warn ("%s", bp_error_msg);
-	      mem_fmt (args, oP, 1);
-	      break;
-	    }
-	  /* Fall through.  */
-	case MEM2:
-	case MEM4:
-	case MEM8:
-	case MEM12:
-	case MEM16:
-	  if (branch_predict)
-	    as_warn ("%s", bp_error_msg);
-	  mem_fmt (args, oP, 0);
-	  break;
-	case CALLJ:
-	  if (branch_predict)
-	    as_warn ("%s", bp_error_msg);
-	  /* Output opcode & set up "fixup" (relocation); flag
-	     relocation as 'callj' type.  */
-	  know (oP->num_ops == 1);
-	  get_cdisp (args[1], "CTRL", oP->opcode, 24, 0, 1);
-	  break;
-	default:
-	  BAD_CASE (oP->format);
-	  break;
-	}
-    }
+  } else if (n_ops != oP->num_ops) {
+    as_bad (_("improper number of operands.  Expecting %d, got %d"), oP->num_ops, n_ops);
+  } else {
+      switch (oP->format) {
+          case FBRA:
+          case CTRL:
+              ctrl_fmt (args[1], oP->opcode | bp_bits, oP->num_ops);
+              if (oP->format == FBRA)
+                  /* Now generate a 'bno' to same arg */
+                  ctrl_fmt (args[1], BNO | bp_bits, 1);
+              break;
+          case COBR:
+          case COJ:
+              cobr_fmt (args, oP->opcode | bp_bits, oP);
+              break;
+          case REG:
+              if (branch_predict)
+                  as_warn ("%s", bp_error_msg);
+              reg_fmt (args, oP);
+              break;
+          case MEM1:
+              if (args[0][0] == 'c' && args[0][1] == 'a')
+              {
+                  if (branch_predict)
+                      as_warn ("%s", bp_error_msg);
+                  mem_fmt (args, oP, 1);
+                  break;
+              }
+              /* Fall through.  */
+          case MEM2:
+          case MEM4:
+          case MEM8:
+          case MEM12:
+          case MEM16:
+              if (branch_predict)
+                  as_warn ("%s", bp_error_msg);
+              mem_fmt (args, oP, 0);
+              break;
+          case CALLJ:
+              if (branch_predict)
+                  as_warn ("%s", bp_error_msg);
+              /* Output opcode & set up "fixup" (relocation); flag
+                 relocation as 'callj' type.  */
+              know (oP->num_ops == 1);
+              get_cdisp (args[1], "CTRL", oP->opcode, 24, 0, 1);
+              break;
+          default:
+              BAD_CASE (oP->format);
+              break;
+      }
+  }
 }
 
 void
