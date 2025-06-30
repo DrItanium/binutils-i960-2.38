@@ -344,18 +344,45 @@ regnames[] =
   { "fp2", 66 },
   { "fp3", 67 },
 
-  /* Encode the rv32 emulator names for simplicity */
-  /* I would not be doing this if I had the ability to rename registers */
-  { "instruction", 3 }, // r3
-  { "t0", 4 }, // r4
-  { "t1", 5 }, // r5
-  { "t2", 6 }, // r6
-  { "t3", 7 }, // r7
-  { "rs1", 8 }, // r8
-  { "rs2", 9 },  // r9
-  { "rd", 10 }, // r10
-  { "immediate", 11 }, // r11
-  { "pc", 12 }, // r12
+  /* rv32e register references */
+  // zero register is ignored
+  { "ra", 30 }, // g14 | x1
+  // x2/sp is sp although we need to be careful
+  // x3/gp is special so ignore it for now
+  // x4/tp is special so ignore it for now
+  { "t0", 24 }, // g8 | x5
+  { "t1", 25 }, // g9 | x6
+  { "t2", 26 }, // g10 | x7
+  { "s0", 27 }, // g11 | x8
+  { "s1", 28 }, // g12 | x9
+  { "a0", 16 }, // g0 | x10
+  { "a1", 17 }, // g1 | x11
+  { "a2", 18 }, // g2 | x12
+  { "a3", 19 }, // g3 | x13
+  { "a4", 20 }, // g4 | x14
+  { "a5", 21 }, // g5 | x15
+  /* rv32 full register references */
+  { "a6", 22 }, // g6 | x16
+  { "a7", 23 }, // g7 | x17
+  { "s2", 29 }, // g13 | x18
+  { "s3", 3 }, // r3 | x19
+  { "s4", 4 }, // r4 | x20
+  { "s5", 5 }, // r5 | x21
+  { "s6", 6 }, // r6 | x22
+  { "s7", 7 }, // r7 | x23
+  { "s8", 8 }, // r8 | x24
+  { "s9", 9 }, // r9 | x25
+  { "s10", 10 }, // r10 | x26
+  { "s11", 11 }, // r11 | x27
+  { "t3", 12 }, // r12 | x28
+  { "t4", 13 }, // r13 | x29
+  { "t5", 14 }, // r14 | x30
+  { "t6", 15 }, // r15 | x31
+
+  // Free registers are:
+  // g11, g12, g13, r3-r15 or 16 more registers
+
+                
   { NULL, 0 },				/* END OF LIST */
 };
 
@@ -409,16 +436,19 @@ aregs[] =
   /* For assembler internal use only: this number never appears in binary
      output.  */
   { "(ip)", IPREL },
-  { "(instruction)", 3 }, // r3
-  { "(t0)", 4 }, // r4
-  { "(t1)", 5 }, // r5
-  { "(t2)", 6 }, // r6
-  { "(t3)", 7 }, // r7
-  { "(rs1)", 8 }, // r8
-  { "(rs2)", 9 },  // r9
-  { "(rd)", 10 }, // r10
-  { "(immediate)", 11 }, // r11
-  { "(pc)", 12 }, // r12
+  /* rv32e lookups */
+  { "(ra)", 30 },
+  { "(t0)", 22 },
+  { "(t1)", 23 },
+  { "(t2)", 24 },
+  { "(s0)", 25 },
+  { "(s1)", 26 },
+  { "(a0)", 16 },
+  { "(a1)", 17 },
+  { "(a2)", 18 },
+  { "(a3)", 19 },
+  { "(a4)", 20 },
+  { "(a5)", 21 },
 
   { NULL, 0 },				/* END OF LIST */
 };
@@ -1285,62 +1315,56 @@ parse_ldconst (char *arg[])	/* See above.  */
   arg[3] = NULL;		/* So we can tell at the end if it got used or not.  */
 
   parse_expr (arg[1], &e);
-  switch (e.X_op)
-    {
-    default:
-      /* We're dependent on one or more symbols -- use "lda".  */
-      arg[0] = (char *) "lda";
-      break;
+  switch (e.X_op) {
+      default:
+          /* We're dependent on one or more symbols -- use "lda".  */
+          arg[0] = (char *) "lda";
+          break;
 
-    case O_constant:
-      /* Try the following mappings:
-              ldconst   0,<reg>  -> mov  0,<reg>
-              ldconst  31,<reg>  -> mov  31,<reg>
-              ldconst  32,<reg>  -> addo 1,31,<reg>
-              ldconst  62,<reg>  -> addo 31,31,<reg>
-              ldconst  64,<reg>  -> shlo 8,3,<reg>
-              ldconst  -1,<reg>  -> subo 1,0,<reg>
-              ldconst -31,<reg>  -> subo 31,0,<reg>
+      case O_constant:
+          /* Try the following mappings:
+             ldconst   0,<reg>  -> mov  0,<reg>
+             ldconst  31,<reg>  -> mov  31,<reg>
+             ldconst  32,<reg>  -> addo 1,31,<reg>
+             ldconst  62,<reg>  -> addo 31,31,<reg>
+             ldconst  64,<reg>  -> shlo 8,3,<reg>
+             ldconst  -1,<reg>  -> subo 1,0,<reg>
+             ldconst -31,<reg>  -> subo 31,0,<reg>
 
-         Anything else becomes:
-                lda xxx,<reg>.  */
-      n = offs (e);
-      if ((0 <= n) && (n <= 31))
-	arg[0] = (char *) "mov";
-      else if ((-31 <= n) && (n <= -1))
-	{
-	  arg[0] = (char *) "subo";
-	  arg[3] = arg[2];
-	  sprintf (buf, "%d", -n);
-	  arg[1] = buf;
-	  arg[2] = (char *) "0";
-	}
-      else if ((32 <= n) && (n <= 62))
-	{
-	  arg[0] = (char *) "addo";
-	  arg[3] = arg[2];
-	  arg[1] = (char *) "31";
-	  sprintf (buf, "%d", n - 31);
-	  arg[2] = buf;
-	}
-      else if ((shift = shift_ok (n)) != 0)
-	{
-	  arg[0] = (char *) "shlo";
-	  arg[3] = arg[2];
-	  sprintf (buf, "%d", shift);
-	  arg[1] = buf;
-	  sprintf (buf2, "%d", n >> shift);
-	  arg[2] = buf2;
-	}
-      else
-	arg[0] = (char *) "lda";
-      break;
+             Anything else becomes:
+             lda xxx,<reg>.  */
+          n = offs (e);
+          if ((0 <= n) && (n <= 31)) {
+              arg[0] = (char *) "mov";
+          } else if ((-31 <= n) && (n <= -1)) {
+              arg[0] = (char *) "subo";
+              arg[3] = arg[2];
+              sprintf (buf, "%d", -n);
+              arg[1] = buf;
+              arg[2] = (char *) "0";
+          } else if ((32 <= n) && (n <= 62)) {
+              arg[0] = (char *) "addo";
+              arg[3] = arg[2];
+              arg[1] = (char *) "31";
+              sprintf (buf, "%d", n - 31);
+              arg[2] = buf;
+          } else if ((shift = shift_ok (n)) != 0) {
+              arg[0] = (char *) "shlo";
+              arg[3] = arg[2];
+              sprintf (buf, "%d", shift);
+              arg[1] = buf;
+              sprintf (buf2, "%d", n >> shift);
+              arg[2] = buf2;
+          } else {
+              arg[0] = (char *) "lda";
+          }
+          break;
 
-    case O_illegal:
-      as_bad (_("invalid constant"));
-      return -1;
-      break;
-    }
+      case O_illegal:
+          as_bad (_("invalid constant"));
+          return -1;
+          break;
+  }
   return (arg[3] == 0) ? 2 : 3;
 }
 
