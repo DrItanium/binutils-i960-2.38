@@ -346,41 +346,59 @@ regnames[] =
 
   /* rv32e register references */
   // zero register is ignored
-  { "ra", 30 }, // g14 | x1
   // x2/sp is sp although we need to be careful
   // x3/gp is special so ignore it for now
   // x4/tp is special so ignore it for now
-  { "t0", 24 }, // g8 | x5
-  { "t1", 25 }, // g9 | x6
-  { "t2", 26 }, // g10 | x7
-  { "s0", 27 }, // g11 | x8
-  { "s1", 28 }, // g12 | x9
+                
   { "a0", 16 }, // g0 | x10
   { "a1", 17 }, // g1 | x11
   { "a2", 18 }, // g2 | x12
   { "a3", 19 }, // g3 | x13
   { "a4", 20 }, // g4 | x14
   { "a5", 21 }, // g5 | x15
-  /* rv32 full register references */
+  // rv32 full register reference
   { "a6", 22 }, // g6 | x16
   { "a7", 23 }, // g7 | x17
-  { "s2", 29 }, // g13 | x18
-  { "s3", 3 }, // r3 | x19
-  { "s4", 4 }, // r4 | x20
-  { "s5", 5 }, // r5 | x21
-  { "s6", 6 }, // r6 | x22
-  { "s7", 7 }, // r7 | x23
-  { "s8", 8 }, // r8 | x24
-  { "s9", 9 }, // r9 | x25
-  { "s10", 10 }, // r10 | x26
-  { "s11", 11 }, // r11 | x27
-  { "t3", 12 }, // r12 | x28
-  { "t4", 13 }, // r13 | x29
-  { "t5", 14 }, // r14 | x30
-  { "t6", 15 }, // r15 | x31
-
-  // Free registers are:
-  // g11, g12, g13, r3-r15 or 16 more registers
+  { "t0", 24 }, // g8 | x5
+  { "t1", 25 }, // g9 | x6
+  { "t2", 26 }, // g10 | x7
+  { "t3", 27 }, // g11 | x28
+  { "s0", 28 }, // g12 | x8
+  { "s1", 29 }, // g13 | x9
+  { "ra", 30 }, // g14 | x1
+                // fp  | this cannot be touched by our execution environment
+  { "t6", 0 },  // pfp | x31 | NOTE: this is hack but should be fine if we are careful
+                // sp  | will need to be adapted to have the stack grow like
+                // the i960 expects!
+  { "t5", 2 },  // rip | x30 | NOTE: this is also a hack but should be fine if we are careful
+  { "t4", 3 },  // r3 | x31
+  { "s2", 4 },  // r6 | x18
+  { "s3", 5 },  // r7 | x19
+  { "s4", 6 },  // r8 | x20
+  { "s5", 7 },  // r9 | x21
+  { "s6", 8 },  // r10 | x22
+  { "s7", 9 },  // r11 | x23
+  { "s8", 10 },  // r12 | x24
+  { "s9", 11 }, // r13 | x25
+  { "s10", 12 }, // r14 | x26
+  { "s11", 13 }, // r15 | x27
+    // rip can actually be used as a temporary stash since it will never
+    // actually be used during normal execution. The rip in the riscv execution
+    // frame will never need to be used!
+    //
+    // However, the frame pointer or (fp) will actually stick around to make
+    // sure that the riscv execution environment has its proper storage
+    // location.
+    //
+    // Interrupts, faults, and supervisor mode will switch the stacks out (and
+    // also the frame pointer too). But calling ret from the context of riscv
+    // could cause some odd behavior... But we could also stash the current
+    // frame pointer in pfp once we get into the rv32 environment so no matter
+    // what you do, you will not hose the stack at all!
+    //
+    // That way, we actually have an extra register in the form of g14 that can
+    // be used temporarily for zero and other such things
+    //
 
                 
   { NULL, 0 },				/* END OF LIST */
