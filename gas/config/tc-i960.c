@@ -399,7 +399,17 @@ regnames[] =
     // That way, we actually have an extra register in the form of g14 that can
     // be used temporarily for zero and other such things
     //
-
+    //
+    // We actually can use the frame pointer in a dual lobe setup!
+    // So the i960 grows the stack towards high addresses while RISCV grows the
+    // stack down towards zero! We could allocate space in both directions to
+    // keep the two designs unaware of each other. 
+    //
+    // The problem with this design is that it requires extra logic and mental
+    // calculation. 
+    //
+    // I guess just cleaning up the stack allocation direction makes more sense
+    // but even then I still don't really like it... 
                 
   { NULL, 0 },				/* END OF LIST */
 };
