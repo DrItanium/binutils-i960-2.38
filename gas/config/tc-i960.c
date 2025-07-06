@@ -1214,8 +1214,6 @@ shift_ok (int n)		/* The constant of interest.  */
 }
 static void
 encodeSetbit(char* arg[], const char* bitpos, const char* src) {
-    static char buf0[10];
-    static char buf1[10];
     arg[0] = (char*)"setbit";
     arg[3] = arg[2]; // transfer arg2 over to arg3
     arg[1] = (char*)bitpos;
@@ -1290,9 +1288,15 @@ parse_ldconst (char *arg[])	/* See above.  */
               arg[2] = buf2;
           } else {
               switch (n) {
-                  case 63:
-                      encodeSetbit(arg, "5", "31");
-                      break;
+#define X(value, shift, src) case value : encodeSetbit(arg, #shift, #src ); break;
+                  X(63, 5, 31);
+                  X(65, 6, 1);
+                  X(66, 6, 2);
+                  X(67, 6, 3);
+                  X(69, 6, 5);
+                  X(70, 6, 6);
+                  X(71, 6, 7);
+#undef X
                   default:
                       arg[0] = (char *) "lda";
                       break;
