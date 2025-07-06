@@ -1230,8 +1230,8 @@ parse_ldconst (char *arg[])	/* See above.  */
 {
   int n;			/* Constant to be loaded.  */
   int shift;			/* Shift count for "shlo" instruction.  */
-  static char buf[10];		/* Literal for first operand.  */
-  static char buf2[10];		/* Literal for second operand.  */
+  static char buf[12];		/* Literal for first operand.  */
+  static char buf2[12];		/* Literal for second operand.  */
   expressionS e;		/* Parsed expression.  */
 
   arg[3] = NULL;		/* So we can tell at the end if it got used or not.  */
@@ -1296,66 +1296,55 @@ static void
 reg_fmt (char *args[],		/* args[0]->opcode mnemonic, args[1-3]->operands.  */
 	 struct i960_opcode *oP)/* Pointer to description of instruction.  */
 {
-  long instr;			/* Binary to be output.  */
-  struct regop regop;		/* Description of register operand.  */
-  int n_ops;			/* Number of operands.  */
+    struct regop regop;		/* Description of register operand.  */
 
-  instr = oP->opcode;
-  n_ops = oP->num_ops;
+    long instr = oP->opcode; /* binary to be output */
+    int n_ops = oP->num_ops; /* Number of operands */
 
-  if (n_ops >= 1)
-    {
-      parse_regop (&regop, args[1], oP->operand[0]);
+    if (n_ops >= 1) {
+        parse_regop (&regop, args[1], oP->operand[0]);
 
-      if ((n_ops == 1) && !(instr & M3))
-	{
-	  /* 1-operand instruction in which the dst field should
-	     be used (instead of src1).  */
-	  regop.n <<= 19;
-	  if (regop.special)
-	    regop.mode = regop.special;
-	  regop.mode <<= 13;
-	  regop.special = 0;
-	}
-      else
-	{
-	  /* regop.n goes in bit 0, needs no shifting.  */
-	  regop.mode <<= 11;
-	  regop.special <<= 5;
-	}
-      instr |= regop.n | regop.mode | regop.special;
+        if ((n_ops == 1) && !(instr & M3)) {
+            /* 1-operand instruction in which the dst field should
+               be used (instead of src1).  */
+            regop.n <<= 19;
+            if (regop.special)
+                regop.mode = regop.special;
+            regop.mode <<= 13;
+            regop.special = 0;
+        } else {
+            /* regop.n goes in bit 0, needs no shifting.  */
+            regop.mode <<= 11;
+            regop.special <<= 5;
+        }
+        instr |= regop.n | regop.mode | regop.special;
     }
 
-  if (n_ops >= 2)
-    {
-      parse_regop (&regop, args[2], oP->operand[1]);
+    if (n_ops >= 2) {
+        parse_regop (&regop, args[2], oP->operand[1]);
 
-      if ((n_ops == 2) && !(instr & M3))
-	{
-	  /* 2-operand instruction in which the dst field should
-	     be used instead of src2).  */
-	  regop.n <<= 19;
-	  if (regop.special)
-	    regop.mode = regop.special;
-	  regop.mode <<= 13;
-	  regop.special = 0;
-	}
-      else
-	{
-	  regop.n <<= 14;
-	  regop.mode <<= 12;
-	  regop.special <<= 6;
-	}
-      instr |= regop.n | regop.mode | regop.special;
+        if ((n_ops == 2) && !(instr & M3)) {
+            /* 2-operand instruction in which the dst field should
+               be used instead of src2).  */
+            regop.n <<= 19;
+            if (regop.special)
+                regop.mode = regop.special;
+            regop.mode <<= 13;
+            regop.special = 0;
+        } else {
+            regop.n <<= 14;
+            regop.mode <<= 12;
+            regop.special <<= 6;
+        }
+        instr |= regop.n | regop.mode | regop.special;
     }
-  if (n_ops == 3)
-    {
-      parse_regop (&regop, args[3], oP->operand[2]);
-      if (regop.special)
-	regop.mode = regop.special;
-      instr |= (regop.n <<= 19) | (regop.mode <<= 13);
+    if (n_ops == 3) {
+        parse_regop (&regop, args[3], oP->operand[2]);
+        if (regop.special)
+            regop.mode = regop.special;
+        instr |= (regop.n <<= 19) | (regop.mode <<= 13);
     }
-  emit (instr);
+    emit (instr);
 }
 
 /* get_args:	break individual arguments out of comma-separated list
