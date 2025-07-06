@@ -146,6 +146,9 @@ struct regop;
 /* See md_parse_option() for meanings of these options.  */
 static char norelax;			/* True if -norelax switch seen.  */
 static char instrument_branches;	/* True if -b switch seen.  */
+static char language_mode; /* 0 -> i960
+                              1 -> riscv32
+                              */
 
 /* Characters that always start a comment.
    If the pre-processor is disabled, these aren't very useful.  */
@@ -737,83 +740,69 @@ parse_regop (struct regop *regopP,	/* Where to put description of register opera
 	     char *optext,		/* Text of operand.  */
 	     char opdesc)      		/* Descriptor byte:  what's legal for this operand.  */
 {
-  int n;			/* Register number.  */
-  expressionS e;		/* Parsed expression.  */
+    int n;			/* Register number.  */
+    expressionS e;		/* Parsed expression.  */
 
-  /* See if operand is a register.  */
-  n = get_regnum (optext);
-  if (n >= 0)
-    {
-      if (IS_RG_REG (n))
-	{
-	  /* Global or local register.  */
-	  if (!REG_ALIGN (opdesc, n))
-	    as_bad (_("unaligned register"));
+    /* See if operand is a register.  */
+    n = get_regnum (optext);
+    if (n >= 0) {
+        if (IS_RG_REG (n)) {
+            /* Global or local register.  */
+            if (!REG_ALIGN (opdesc, n))
+                as_bad (_("unaligned register"));
 
-	  regopP->n = n;
-	  regopP->mode = 0;
-	  regopP->special = 0;
-	  return;
-	}
-      else if (IS_FP_REG (n) && FP_OK (opdesc))
-	{
-	  /* Floating point register, and it's allowed.  */
-	  regopP->n = n - FP0;
-	  regopP->mode = 1;
-	  regopP->special = 0;
-	  return;
-	}
-      else if (IS_SF_REG (n) && SFR_OK (opdesc))
-	{
-	  /* Special-function register, and it's allowed.  */
-	  regopP->n = n - SF0;
-	  regopP->mode = 0;
-	  regopP->special = 1;
-	  if (!targ_has_sfr (regopP->n))
-	    as_bad (_("no such sfr in this architecture"));
+            regopP->n = n;
+            regopP->mode = 0;
+            regopP->special = 0;
+            return;
+        } else if (IS_FP_REG (n) && FP_OK (opdesc)) {
+            /* Floating point register, and it's allowed.  */
+            regopP->n = n - FP0;
+            regopP->mode = 1;
+            regopP->special = 0;
+            return;
+        } else if (IS_SF_REG (n) && SFR_OK (opdesc)) {
+            /* Special-function register, and it's allowed.  */
+            regopP->n = n - SF0;
+            regopP->mode = 0;
+            regopP->special = 1;
+            if (!targ_has_sfr (regopP->n))
+                as_bad (_("no such sfr in this architecture"));
 
-	  return;
-	}
-    }
-  else if (LIT_OK (opdesc))
-    {
-      /* How about a literal?  */
-      regopP->mode = 1;
-      regopP->special = 0;
-      if (FP_OK (opdesc))
-	{
-	  /* Floating point literal acceptable.  */
-	  /* Skip over 0f, 0d, or 0e prefix.  */
-	  if ((optext[0] == '0')
-	      && (optext[1] >= 'd')
-	      && (optext[1] <= 'f'))
-	    optext += 2;
+            return;
+        }
+    } else if (LIT_OK (opdesc)) {
+        /* How about a literal?  */
+        regopP->mode = 1;
+        regopP->special = 0;
+        if (FP_OK (opdesc)) {
+            /* Floating point literal acceptable.  */
+            /* Skip over 0f, 0d, or 0e prefix.  */
+            if ((optext[0] == '0')
+                    && (optext[1] >= 'd')
+                    && (optext[1] <= 'f'))
+                optext += 2;
 
-	  if (!strcmp (optext, "0.0") || !strcmp (optext, "0"))
-	    {
-	      regopP->n = 0x10;
-	      return;
-	    }
+            if (!strcmp (optext, "0.0") || !strcmp (optext, "0")) {
+                regopP->n = 0x10;
+                return;
+            }
 
-	  if (!strcmp (optext, "1.0") || !strcmp (optext, "1"))
-	    {
-	      regopP->n = 0x16;
-	      return;
-	    }
-	}
-      else
-	{
-	  /* Fixed point literal acceptable.  */
-	  parse_expr (optext, &e);
-	  if (e.X_op != O_constant
-	      || (offs (e) < 0) || (offs (e) > 31))
-	    {
-	      as_bad (_("illegal literal"));
-	      offs (e) = 0;
-	    }
-	  regopP->n = offs (e);
-	  return;
-	}
+            if (!strcmp (optext, "1.0") || !strcmp (optext, "1")) {
+                regopP->n = 0x16;
+                return;
+            }
+        } else {
+            /* Fixed point literal acceptable.  */
+            parse_expr (optext, &e);
+            if (e.X_op != O_constant
+                    || (offs (e) < 0) || (offs (e) > 31)) {
+                as_bad (_("illegal literal"));
+                offs (e) = 0;
+            }
+            regopP->n = offs (e);
+            return;
+        }
     }
 
   /* Nothing worked.  */
@@ -1769,12 +1758,15 @@ md_number_to_field (char *instrP,		/* Pointer to instruction to be fixed.  */
   		means mixing architectures!).  */
 
 const char *md_shortopts = "A:b";
+enum options {
+  OPTION_LINKRELAX = OPTION_MD_BASE,
+  OPTION_NORELAX,
+  OPTION_END_OF_ENUM
+};
 struct option md_longopts[] =
 {
-#define OPTION_LINKRELAX (OPTION_MD_BASE)
   {"linkrelax", no_argument, NULL, OPTION_LINKRELAX},
   {"link-relax", no_argument, NULL, OPTION_LINKRELAX},
-#define OPTION_NORELAX (OPTION_MD_BASE + 1)
   {"norelax", no_argument, NULL, OPTION_NORELAX},
   {"no-relax", no_argument, NULL, OPTION_NORELAX},
   {NULL, no_argument, NULL, 0}
@@ -1859,7 +1851,7 @@ md_show_usage (FILE *stream)
 -no-relax		don't alter compare-and-branch instructions for\n\
 			long displacements\n"));
 }
-
+
 /* relax_cobr:
    Replace cobr instruction in a code fragment with equivalent branch and
    compare instructions, so it can reach beyond a 13-bit displacement.
@@ -2795,6 +2787,8 @@ const pseudo_typeS md_pseudo_table[] =
   /* these options just consume the line and do nothing special right now */
   {"attribute", s_i960_rv32_attribute, 0},
   {"option", s_i960_rv32_option, 0},
+  //{"lang_riscv32", s_i960_enter_lang_mode, 1},
+  //{"lang_i960", s_i960_enter_lang_mode, 0},
 
   {0, 0, 0}
 };
