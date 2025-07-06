@@ -37,4 +37,15 @@ START_RELOC_NUMBERS (elf_i960_reloc_type)
      RELOC_NUMBER (R_960_RV32_LO12, 9)
 END_RELOC_NUMBERS (R_960_max)
 
+/* Object attributes (taken from riscv for emulation purposes) .  */
+enum
+{
+  /* 0-3 are generic.  */
+  Tag_I960_stack_align = 4,
+  Tag_I960_arch = 5,
+  Tag_I960_unaligned_access = 6,
+  Tag_I960_priv_spec = 8,
+  Tag_I960_priv_spec_minor = 10,
+  Tag_I960_priv_spec_revision = 12
+};
 #endif /* _ELF_I960_H */

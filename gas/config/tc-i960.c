@@ -86,6 +86,7 @@
 #include "safe-ctype.h"
 
 #include "opcode/i960.h"
+#include "elf/i960.h"
 
 #if defined (OBJ_AOUT) || defined (OBJ_BOUT)
 
@@ -2608,23 +2609,57 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixP)
 
 /* end from cgen.c */
 
+/* Given a symbolic attribute NAME, return the proper integer value.
+   Returns -1 if the attribute is not known.  */
+
+int
+i960_convert_symbolic_attribute (const char *name)
+{
+  static const struct
+  {
+    const char *name;
+    const int tag;
+  }
+  attribute_table[] =
+  {
+#define T(tag) {#tag, Tag_I960_##tag}, {"Tag_I960_" #tag, Tag_I960_##tag}
+    T(arch),
+    T(priv_spec),
+    T(priv_spec_minor),
+    T(priv_spec_revision),
+    T(unaligned_access),
+    T(stack_align),
+#undef T
+  };
+
+  if (name == NULL)
+    return -1;
+
+  unsigned int i;
+  for (i = 0; i < ARRAY_SIZE (attribute_table); i++)
+    if (strcmp (name, attribute_table[i].name) == 0)
+      return attribute_table[i].tag;
+
+  return -1;
+}
+
 static void
 s_i960_rv32_attribute(int ignore ATTRIBUTE_UNUSED)
 {
-#if 0
     /// @todo reimplement for i960 emulation
   int tag = obj_elf_vendor_attribute (OBJ_ATTR_PROC);
-  unsigned old_xlen;
-  obj_attribute *attr;
+  //unsigned old_xlen;
+  //obj_attribute *attr;
 
-  explicit_attr = true;
+  //explicit_attr = true;
   switch (tag)
     {
-    case Tag_RISCV_arch:
+    case Tag_I960_arch:
+#if 0
       old_xlen = xlen;
       attr = elf_known_obj_attributes_proc (stdoutput);
       if (!start_assemble)
-	riscv_set_arch (attr[Tag_RISCV_arch].s);
+	riscv_set_arch (attr[Tag_I960_arch].s);
       else
 	as_fatal (_("architecture elf attributes must set before "
 		    "any instructions"));
@@ -2638,20 +2673,94 @@ s_i960_rv32_attribute(int ignore ATTRIBUTE_UNUSED)
 	  if (! bfd_set_arch_mach (stdoutput, bfd_arch_riscv, mach))
 	    as_warn (_("could not set architecture and machine"));
 	}
+#endif
       break;
 
-    case Tag_RISCV_priv_spec:
-    case Tag_RISCV_priv_spec_minor:
-    case Tag_RISCV_priv_spec_revision:
+    case Tag_I960_priv_spec:
+    case Tag_I960_priv_spec_minor:
+    case Tag_I960_priv_spec_revision:
+#if 0
       if (start_assemble)
        as_fatal (_("privileged elf attributes must set before "
 		   "any instructions"));
+#endif
       break;
 
     default:
       break;
     }
+}
+
+/* taken from tc-riscv.c and modified */
+static void
+s_i960_rv32_option (int x ATTRIBUTE_UNUSED)
+{
+  char *name = input_line_pointer;
+
+  while (!is_end_of_line[(unsigned char) *input_line_pointer])
+      ++input_line_pointer;
+  char ch = *input_line_pointer;
+  *input_line_pointer = '\0';
+#if 0
+  if (strcmp (name, "rvc") == 0) {
+      //riscv_update_subset (&riscv_rps_as, "+c");
+      //riscv_set_rvc (true);
+    } else if (strcmp (name, "norvc") == 0) {
+      //riscv_update_subset (&riscv_rps_as, "-c");
+      //riscv_set_rvc (false);
+    } else if (strcmp (name, "pic") == 0) {
+    riscv_opts.pic = true;
+    } else if (strcmp (name, "nopic") == 0) {
+    riscv_opts.pic = false;
+    } else if (strcmp (name, "relax") == 0) {
+    riscv_opts.relax = true;
+    } else if (strcmp (name, "norelax") == 0) {
+    riscv_opts.relax = false;
+    } else if (strcmp (name, "csr-check") == 0) {
+    riscv_opts.csr_check = true;
+    } else if (strcmp (name, "no-csr-check") == 0) {
+    riscv_opts.csr_check = false;
+    } else if (strncmp (name, "arch,", 5) == 0) {
+        name += 5;
+        if (ISSPACE (*name) && *name != '\0') {
+            name++;
+        }
+        riscv_update_subset (&riscv_rps_as, name);
+
+        //riscv_set_rvc (false);
+        //if (riscv_subset_supports (&riscv_rps_as, "c"))
+        //    riscv_set_rvc (true);
+    } else if (strcmp (name, "push") == 0) {
+      //struct riscv_option_stack *s;
+
+      //s = XNEW (struct riscv_option_stack);
+      //s->next = riscv_opts_stack;
+      //s->options = riscv_opts;
+      //s->subset_list = riscv_subsets;
+      //riscv_opts_stack = s;
+      //riscv_subsets = riscv_copy_subset_list (s->subset_list);
+      //riscv_rps_as.subset_list = riscv_subsets;
+    } else if (strcmp (name, "pop") == 0) {
+        //struct riscv_option_stack *s;
+
+        //s = riscv_opts_stack;
+        //if (s == NULL)
+        //    as_bad (_(".option pop with no .option push"));
+        //else {
+        //    riscv_subset_list_t *release_subsets = riscv_subsets;
+        //    riscv_opts_stack = s->next;
+        //    riscv_opts = s->options;
+        //    riscv_subsets = s->subset_list;
+        //    riscv_rps_as.subset_list = riscv_subsets;
+        //    riscv_release_subset_list (release_subsets);
+        //    free (s);
+        //}
+    } else {
+        as_warn (_("unrecognized .option directive: %s\n"), name);
+    }
 #endif
+  *input_line_pointer = ch;
+  demand_empty_rest_of_line ();
 }
 
 
@@ -2669,8 +2778,8 @@ const pseudo_typeS md_pseudo_table[] =
   {"dword", cons, 8},
   {"quad", cons, 16},
   /* rv32 emulation targets to assist in conversion */
-  //{"option", s_i960_rv32_option, 0},
   {"attribute", s_i960_rv32_attribute, 0},
+  {"option", s_i960_rv32_option, 0},
 
   {0, 0, 0}
 };

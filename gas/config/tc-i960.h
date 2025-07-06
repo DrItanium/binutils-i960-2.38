@@ -162,7 +162,9 @@ extern int i960_validate_fix (struct fix *, segT);
 
 extern void brtab_emit (void);
 #define md_end()	brtab_emit ()
+#define CONVERT_SYMBOLIC_ATTRIBUTE i960_convert_symbolic_attribute
 
+extern int i960_convert_symbolic_attribute (const char *);
 extern void tc_set_bal_of_call (symbolS *, symbolS *);
 
 extern struct symbol *tc_get_bal_of_call (symbolS *);
