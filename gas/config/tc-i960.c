@@ -1212,13 +1212,6 @@ shift_ok (int n)		/* The constant of interest.  */
 
   return shift;
 }
-static void
-encodeSetbit(char* arg[], const char* bitpos, const char* src) {
-    arg[0] = (char*)"setbit";
-    arg[3] = arg[2]; // transfer arg2 over to arg3
-    arg[1] = (char*)bitpos;
-    arg[2] = (char*)src;
-}
 /* parse_ldcont:
    Parse and replace a 'ldconst' pseudo-instruction with an appropriate
    i80960 instruction.
@@ -1259,8 +1252,6 @@ parse_ldconst (char *arg[])	/* See above.  */
              ldconst  64,<reg>  -> shlo 8,3,<reg>
              ldconst  -1,<reg>  -> subo 1,0,<reg>
              ldconst -31,<reg>  -> subo 31,0,<reg>
-             ldconst  63,<reg>  -> setbit 5,31,<reg>
-             ldconst  65,<reg>  -> setbit 6,1,<reg>
 
              Anything else becomes:
              lda xxx,<reg>.  */
@@ -1287,20 +1278,7 @@ parse_ldconst (char *arg[])	/* See above.  */
               sprintf (buf2, "%d", n >> shift);
               arg[2] = buf2;
           } else {
-              switch (n) {
-#define X(value, shift, src) case value : encodeSetbit(arg, #shift, #src ); break;
-                  X(63, 5, 31);
-                  X(65, 6, 1);
-                  X(66, 6, 2);
-                  X(67, 6, 3);
-                  X(69, 6, 5);
-                  X(70, 6, 6);
-                  X(71, 6, 7);
-#undef X
-                  default:
-                      arg[0] = (char *) "lda";
-                      break;
-              }
+              arg[0] = (char *) "lda";
           }
           break;
 
