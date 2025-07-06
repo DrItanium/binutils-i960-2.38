@@ -2608,6 +2608,54 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixP)
 
 /* end from cgen.c */
 
+static void
+s_i960_rv32_attribute(int ignore ATTRIBUTE_UNUSED)
+{
+#if 0
+    /// @todo reimplement for i960 emulation
+  int tag = obj_elf_vendor_attribute (OBJ_ATTR_PROC);
+  unsigned old_xlen;
+  obj_attribute *attr;
+
+  explicit_attr = true;
+  switch (tag)
+    {
+    case Tag_RISCV_arch:
+      old_xlen = xlen;
+      attr = elf_known_obj_attributes_proc (stdoutput);
+      if (!start_assemble)
+	riscv_set_arch (attr[Tag_RISCV_arch].s);
+      else
+	as_fatal (_("architecture elf attributes must set before "
+		    "any instructions"));
+
+      if (old_xlen != xlen)
+	{
+	  /* We must re-init bfd again if xlen is changed.  */
+	  unsigned long mach = xlen == 64 ? bfd_mach_riscv64 : bfd_mach_riscv32;
+	  bfd_find_target (riscv_target_format (), stdoutput);
+
+	  if (! bfd_set_arch_mach (stdoutput, bfd_arch_riscv, mach))
+	    as_warn (_("could not set architecture and machine"));
+	}
+      break;
+
+    case Tag_RISCV_priv_spec:
+    case Tag_RISCV_priv_spec_minor:
+    case Tag_RISCV_priv_spec_revision:
+      if (start_assemble)
+       as_fatal (_("privileged elf attributes must set before "
+		   "any instructions"));
+      break;
+
+    default:
+      break;
+    }
+#endif
+}
+
+
+
 const pseudo_typeS md_pseudo_table[] =
 {
   {"bss", s_lcomm, 1},
@@ -2616,9 +2664,13 @@ const pseudo_typeS md_pseudo_table[] =
   {"leafproc", parse_po, S_LEAFPROC},
   {"sysproc", parse_po, S_SYSPROC},
 
+  {"half", cons, 2},
   {"word", cons, 4},
+  {"dword", cons, 8},
   {"quad", cons, 16},
   /* rv32 emulation targets to assist in conversion */
+  //{"option", s_i960_rv32_option, 0},
+  {"attribute", s_i960_rv32_attribute, 0},
 
   {0, 0, 0}
 };
