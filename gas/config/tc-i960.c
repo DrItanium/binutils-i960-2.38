@@ -1802,42 +1802,41 @@ static const struct tabentry arch_tab[] =
 int
 md_parse_option (int c, const char *arg)
 {
-  switch (c)
-    {
-    case OPTION_LINKRELAX:
-      linkrelax = 1;
-      flag_keep_locals = 1;
-      break;
+    switch (c) {
+        case OPTION_LINKRELAX:
+            linkrelax = 1;
+            flag_keep_locals = 1;
+            break;
 
-    case OPTION_NORELAX:
-      norelax = 1;
-      break;
+        case OPTION_NORELAX:
+            norelax = 1;
+            break;
 
-    case 'b':
-      instrument_branches = 1;
-      break;
+        case 'b':
+            instrument_branches = 1;
+            break;
 
-    case 'A':
-      {
-	const struct tabentry *tp;
-	const char *p = arg;
+        case 'A': 
+            {
+                const struct tabentry *tp;
+                const char *p = arg;
 
-	for (tp = arch_tab; tp->flag != NULL; tp++)
-	  if (!strcmp (p, tp->flag))
-	    break;
+                for (tp = arch_tab; tp->flag != NULL; tp++)
+                    if (!strcmp (p, tp->flag))
+                        break;
 
-	if (tp->flag == NULL)
-	  {
-	    as_bad (_("invalid architecture %s"), p);
-	    return 0;
-	  }
-	else
-	  architecture = tp->arch;
-      }
-      break;
+                if (tp->flag == NULL)
+                {
+                    as_bad (_("invalid architecture %s"), p);
+                    return 0;
+                }
+                else
+                    architecture = tp->arch;
+            }
+            break;
 
-    default:
-      return 0;
+        default: 
+            return 0;
     }
 
   return 1;
@@ -2222,18 +2221,17 @@ parse_po (int po_num)	/* Pseudo-op number:  currently S_LEAFPROC or S_SYSPROC.  
     return;
 
   /* Dispatch to correct handler.  */
-  switch (po_num)
-    {
-    case S_SYSPROC:
-      s_sysproc (n_ops, args);
-      break;
-    case S_LEAFPROC:
-      s_leafproc (n_ops, args);
-      break;
-    default:
-      BAD_CASE (po_num);
-      break;
-    }
+  switch (po_num) {
+      case S_SYSPROC:
+          s_sysproc (n_ops, args);
+          break;
+      case S_LEAFPROC:
+          s_leafproc (n_ops, args);
+          break;
+      default:
+          BAD_CASE (po_num);
+          break;
+  }
 
   /* Restore eol, so line numbers get updated correctly.  Base
      assembler assumes we leave input pointer pointing at char
@@ -2262,39 +2260,34 @@ parse_po (int po_num)	/* Pseudo-op number:  currently S_LEAFPROC or S_SYSPROC.  
 int
 reloc_callj (fixS *fixP)  /* Relocation that can be done at assembly time.  */
 {
-  /* Points to the binary for the instruction being relocated.  */
-  char *where;
+    /* Points to the binary for the instruction being relocated.  */
+    char *where;
 
-  if (!fixP->fx_tcbit)
-    /* This wasn't a callj instruction in the first place.  */
-    return 0;
+    if (!fixP->fx_tcbit)
+        /* This wasn't a callj instruction in the first place.  */
+        return 0;
 
-  where = fixP->fx_frag->fr_literal + fixP->fx_where;
+    where = fixP->fx_frag->fr_literal + fixP->fx_where;
 
-  if (TC_S_IS_SYSPROC (fixP->fx_addsy))
-    {
-      /* Symbol is a .sysproc: replace 'call' with 'calls'.  System
-         procedure number is (other-1).  */
-      md_number_to_chars (where, CALLS | TC_S_GET_SYSPROC (fixP->fx_addsy), 4);
+    if (TC_S_IS_SYSPROC (fixP->fx_addsy)) {
+        /* Symbol is a .sysproc: replace 'call' with 'calls'.  System
+           procedure number is (other-1).  */
+        md_number_to_chars (where, CALLS | TC_S_GET_SYSPROC (fixP->fx_addsy), 4);
 
-      /* Nothing else needs to be done for this instruction.  Make
-         sure 'md_number_to_field()' will perform a no-op.  */
-      fixP->fx_bit_fixP = (bit_fixS *) 1;
+        /* Nothing else needs to be done for this instruction.  Make
+           sure 'md_number_to_field()' will perform a no-op.  */
+        fixP->fx_bit_fixP = (bit_fixS *) 1;
+    } else if (TC_S_IS_CALLNAME (fixP->fx_addsy)) {
+        /* Should not happen: see block comment above.  */
+        as_fatal (_("Trying to 'bal' to %s"), S_GET_NAME (fixP->fx_addsy));
+    } else if (TC_S_IS_BALNAME (fixP->fx_addsy)) {
+        /* Replace 'call' with 'bal'; both instructions have the same
+           format, so calling code should complete relocation as if
+           nothing happened here.  */
+        md_number_to_chars (where, BAL, 4);
+    } else if (TC_S_IS_BADPROC (fixP->fx_addsy)) {
+        as_bad (_("Looks like a proc, but can't tell what kind.\n"));
     }
-  else if (TC_S_IS_CALLNAME (fixP->fx_addsy))
-    {
-      /* Should not happen: see block comment above.  */
-      as_fatal (_("Trying to 'bal' to %s"), S_GET_NAME (fixP->fx_addsy));
-    }
-  else if (TC_S_IS_BALNAME (fixP->fx_addsy))
-    {
-      /* Replace 'call' with 'bal'; both instructions have the same
-         format, so calling code should complete relocation as if
-         nothing happened here.  */
-      md_number_to_chars (where, BAL, 4);
-    }
-  else if (TC_S_IS_BADPROC (fixP->fx_addsy))
-    as_bad (_("Looks like a proc, but can't tell what kind.\n"));
 
   /* Otherwise Symbol is neither a sysproc nor a leafproc.  */
   return 0;
@@ -2309,12 +2302,14 @@ s_endian (int ignore ATTRIBUTE_UNUSED)
   char c;
 
   c = get_symbol_name (&name);
-  if (strcasecmp (name, "little") == 0)
-    ;
-  else if (strcasecmp (name, "big") == 0)
-    as_bad (_("big endian mode is not supported"));
-  else
-    as_warn (_("ignoring unrecognized .endian type `%s'"), name);
+  if (strcasecmp (name, "little") == 0) {
+      // we're good here :)
+  } else if (strcasecmp (name, "big") == 0) {
+      as_bad (_("big endian mode is not supported"));
+  }
+  else {
+      as_warn (_("ignoring unrecognized .endian type `%s'"), name);
+  }
 
   (void) restore_line_pointer (c);
 
@@ -2343,30 +2338,27 @@ md_apply_fix (fixS *fixP,
 	       valueT *valP,
 	       segT seg ATTRIBUTE_UNUSED)
 {
-  long val = *valP;
-  char *place = fixP->fx_where + fixP->fx_frag->fr_literal;
+    long val = *valP;
+    char *place = fixP->fx_where + fixP->fx_frag->fr_literal;
 
-  if (!fixP->fx_bit_fixP)
-    {
-      md_number_to_imm (place, val, fixP->fx_size);
+    if (!fixP->fx_bit_fixP) {
+        md_number_to_imm (place, val, fixP->fx_size);
+    } else if ((int) (size_t) fixP->fx_bit_fixP == 13
+            && fixP->fx_addsy != NULL
+            && S_GET_SEGMENT (fixP->fx_addsy) == undefined_section) {
+        /* This is a COBR instruction.  They have only a
+           13-bit displacement and are only to be used
+           for local branches: flag as error, don't generate
+           relocation.  */
+        as_bad_where (fixP->fx_file, fixP->fx_line,
+                _("can't use COBR format with external label"));
+        fixP->fx_addsy = NULL;
+    } else {
+        md_number_to_field (place, val, fixP->fx_bit_fixP);
     }
-  else if ((int) (size_t) fixP->fx_bit_fixP == 13
-	   && fixP->fx_addsy != NULL
-	   && S_GET_SEGMENT (fixP->fx_addsy) == undefined_section)
-    {
-      /* This is a COBR instruction.  They have only a
-	 13-bit displacement and are only to be used
-	 for local branches: flag as error, don't generate
-	 relocation.  */
-      as_bad_where (fixP->fx_file, fixP->fx_line,
-		    _("can't use COBR format with external label"));
-      fixP->fx_addsy = NULL;
-    }
-  else
-    md_number_to_field (place, val, fixP->fx_bit_fixP);
 
-  if (fixP->fx_addsy == NULL)
-    fixP->fx_done = 1;
+    if (fixP->fx_addsy == NULL)
+        fixP->fx_done = 1;
 }
 
 #if defined(OBJ_AOUT) | defined(OBJ_BOUT)
@@ -2385,44 +2377,39 @@ tc_bout_fix_to_chars (char *where,
   ri.r_bsr = fixP->fx_bsr;	/*SAC LD RELAX HACK */
   /* These two 'cuz of NS32K */
   ri.r_callj = fixP->fx_tcbit;
-  if (fixP->fx_bit_fixP)
-    ri.r_length = 2;
-  else
-    ri.r_length = nbytes_r_length[fixP->fx_size];
+  if (fixP->fx_bit_fixP) {
+      ri.r_length = 2;
+  } else {
+      ri.r_length = nbytes_r_length[fixP->fx_size];
+  }
   ri.r_pcrel = fixP->fx_pcrel;
   ri.r_address = fixP->fx_frag->fr_address + fixP->fx_where - segment_address_in_file;
 
-  if (fixP->fx_r_type != NO_RELOC)
-    {
-      switch (fixP->fx_r_type)
-	{
-	case rs_align:
-	  ri.r_index = -2;
-	  ri.r_pcrel = 1;
-	  ri.r_length = fixP->fx_size - 1;
-	  break;
-	case rs_org:
-	  ri.r_index = -2;
-	  ri.r_pcrel = 0;
-	  break;
-	case rs_fill:
-	  ri.r_index = -1;
-	  break;
-	default:
-	  abort ();
-	}
+  if (fixP->fx_r_type != NO_RELOC) {
+      switch (fixP->fx_r_type) {
+          case rs_align:
+              ri.r_index = -2;
+              ri.r_pcrel = 1;
+              ri.r_length = fixP->fx_size - 1;
+              break;
+          case rs_org:
+              ri.r_index = -2;
+              ri.r_pcrel = 0;
+              break;
+          case rs_fill:
+              ri.r_index = -1;
+              break;
+          default:
+              abort ();
+      }
       ri.r_extern = 0;
-    }
-  else if (linkrelax || !S_IS_DEFINED (symbolP) || fixP->fx_bsr)
-    {
+  } else if (linkrelax || !S_IS_DEFINED (symbolP) || fixP->fx_bsr) {
       ri.r_extern = 1;
       ri.r_index = symbolP->sy_number;
-    }
-  else
-    {
+  } else {
       ri.r_extern = 0;
       ri.r_index = S_GET_TYPE (symbolP);
-    }
+  }
 
   /* Output the relocation information in machine-dependent form.  */
   md_ri_to_chars (where, &ri);
@@ -2547,28 +2534,26 @@ i960_handle_align (fragS *fragp ATTRIBUTE_UNUSED)
 
   /* alignment directive */
   fix_new (fragp, fragp->fr_fix, fragp->fr_offset, 0, 0, 0,
-	   (int) fragp->fr_type);
+          (int) fragp->fr_type);
 #endif /* OBJ_BOUT */
 }
 
 int
 i960_validate_fix (fixS *fixP, segT this_segment_type ATTRIBUTE_UNUSED)
 {
-  if (fixP->fx_tcbit && TC_S_IS_CALLNAME (fixP->fx_addsy))
-    {
-      /* Relocation should be done via the associated 'bal'
-         entry point symbol.  */
-      if (!TC_S_IS_BALNAME (tc_get_bal_of_call (fixP->fx_addsy)))
-	{
-	  as_bad_where (fixP->fx_file, fixP->fx_line,
-			_("No 'bal' entry point for leafproc %s"),
-			S_GET_NAME (fixP->fx_addsy));
-	  return 0;
-	}
-      fixP->fx_addsy = tc_get_bal_of_call (fixP->fx_addsy);
+    if (fixP->fx_tcbit && TC_S_IS_CALLNAME (fixP->fx_addsy)) {
+        /* Relocation should be done via the associated 'bal'
+           entry point symbol.  */
+        if (!TC_S_IS_BALNAME (tc_get_bal_of_call (fixP->fx_addsy))) {
+            as_bad_where (fixP->fx_file, fixP->fx_line,
+                    _("No 'bal' entry point for leafproc %s"),
+                    S_GET_NAME (fixP->fx_addsy));
+            return 0;
+        }
+        fixP->fx_addsy = tc_get_bal_of_call (fixP->fx_addsy);
     }
 
-  return 1;
+    return 1;
 }
 
 /* From cgen.c:  */
@@ -2633,6 +2618,7 @@ const pseudo_typeS md_pseudo_table[] =
 
   {"word", cons, 4},
   {"quad", cons, 16},
+  /* rv32 emulation targets to assist in conversion */
 
   {0, 0, 0}
 };
