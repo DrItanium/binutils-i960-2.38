@@ -2608,7 +2608,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixP)
 }
 
 /* end from cgen.c */
-
+#if 0
 /* Given a symbolic attribute NAME, return the proper integer value.
    Returns -1 if the attribute is not known.  */
 
@@ -2642,11 +2642,14 @@ i960_convert_symbolic_attribute (const char *name)
 
   return -1;
 }
+#endif
 
 static void
 s_i960_rv32_attribute(int ignore ATTRIBUTE_UNUSED)
 {
+#if 0
     /// @todo reimplement for i960 emulation
+
   int tag = obj_elf_vendor_attribute (OBJ_ATTR_PROC);
   //unsigned old_xlen;
   //obj_attribute *attr;
@@ -2689,6 +2692,17 @@ s_i960_rv32_attribute(int ignore ATTRIBUTE_UNUSED)
     default:
       break;
     }
+#else
+  // just consume the rest of the line
+  char *name = input_line_pointer;
+
+  while (!is_end_of_line[(unsigned char) *input_line_pointer])
+      ++input_line_pointer;
+  char ch = *input_line_pointer;
+  *input_line_pointer = '\0';
+  *input_line_pointer = ch;
+  demand_empty_rest_of_line ();
+#endif
 }
 
 /* taken from tc-riscv.c and modified */
@@ -2778,6 +2792,7 @@ const pseudo_typeS md_pseudo_table[] =
   {"dword", cons, 8},
   {"quad", cons, 16},
   /* rv32 emulation targets to assist in conversion */
+  /* these options just consume the line and do nothing special right now */
   {"attribute", s_i960_rv32_attribute, 0},
   {"option", s_i960_rv32_option, 0},
 
