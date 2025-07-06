@@ -344,72 +344,6 @@ regnames[] =
   { "fp2", 66 },
   { "fp3", 67 },
 
-  /* rv32e register references */
-  // zero register is ignored
-  // x2/sp is sp although we need to be careful
-  // x3/gp is special so ignore it for now
-  // x4/tp is special so ignore it for now
-                
-  { "a0", 16 }, // g0 | x10
-  { "a1", 17 }, // g1 | x11
-  { "a2", 18 }, // g2 | x12
-  { "a3", 19 }, // g3 | x13
-  { "a4", 20 }, // g4 | x14
-  { "a5", 21 }, // g5 | x15
-  // rv32 full register reference
-  { "a6", 22 }, // g6 | x16
-  { "a7", 23 }, // g7 | x17
-  { "t0", 24 }, // g8 | x5
-  { "t1", 25 }, // g9 | x6
-  { "t2", 26 }, // g10 | x7
-  { "t3", 27 }, // g11 | x28
-  { "s0", 28 }, // g12 | x8
-  { "s1", 29 }, // g13 | x9
-  { "ra", 30 }, // g14 | x1
-                // fp  | this cannot be touched by our execution environment
-  { "t6", 0 },  // pfp | x31 | NOTE: this is hack but should be fine if we are careful
-                // sp  | will need to be adapted to have the stack grow like
-                // the i960 expects!
-  { "t5", 2 },  // rip | x30 | NOTE: this is also a hack but should be fine if we are careful
-  { "t4", 3 },  // r3 | x31
-  { "s2", 4 },  // r6 | x18
-  { "s3", 5 },  // r7 | x19
-  { "s4", 6 },  // r8 | x20
-  { "s5", 7 },  // r9 | x21
-  { "s6", 8 },  // r10 | x22
-  { "s7", 9 },  // r11 | x23
-  { "s8", 10 },  // r12 | x24
-  { "s9", 11 }, // r13 | x25
-  { "s10", 12 }, // r14 | x26
-  { "s11", 13 }, // r15 | x27
-    // rip can actually be used as a temporary stash since it will never
-    // actually be used during normal execution. The rip in the riscv execution
-    // frame will never need to be used!
-    //
-    // However, the frame pointer or (fp) will actually stick around to make
-    // sure that the riscv execution environment has its proper storage
-    // location.
-    //
-    // Interrupts, faults, and supervisor mode will switch the stacks out (and
-    // also the frame pointer too). But calling ret from the context of riscv
-    // could cause some odd behavior... But we could also stash the current
-    // frame pointer in pfp once we get into the rv32 environment so no matter
-    // what you do, you will not hose the stack at all!
-    //
-    // That way, we actually have an extra register in the form of g14 that can
-    // be used temporarily for zero and other such things
-    //
-    //
-    // We actually can use the frame pointer in a dual lobe setup!
-    // So the i960 grows the stack towards high addresses while RISCV grows the
-    // stack down towards zero! We could allocate space in both directions to
-    // keep the two designs unaware of each other. 
-    //
-    // The problem with this design is that it requires extra logic and mental
-    // calculation. 
-    //
-    // I guess just cleaning up the stack allocation direction makes more sense
-    // but even then I still don't really like it... 
                 
   { NULL, 0 },				/* END OF LIST */
 };
@@ -464,20 +398,6 @@ aregs[] =
   /* For assembler internal use only: this number never appears in binary
      output.  */
   { "(ip)", IPREL },
-  /* rv32e lookups */
-  { "(ra)", 30 },
-  { "(t0)", 22 },
-  { "(t1)", 23 },
-  { "(t2)", 24 },
-  { "(s0)", 25 },
-  { "(s1)", 26 },
-  { "(a0)", 16 },
-  { "(a1)", 17 },
-  { "(a2)", 18 },
-  { "(a3)", 19 },
-  { "(a4)", 20 },
-  { "(a5)", 21 },
-
   { NULL, 0 },				/* END OF LIST */
 };
 
@@ -912,7 +832,6 @@ parse_regop (struct regop *regopP,	/* Where to put description of register opera
 
 static char *
 get_ispec (char *textP)  /* Pointer to memory operand from source instruction, no white space.  */
-
 {
   /* Points to start of index specification.  */
   char *start;
@@ -922,24 +841,22 @@ get_ispec (char *textP)  /* Pointer to memory operand from source instruction, n
   /* Find opening square bracket, if any.  */
   start = strchr (textP, '[');
 
-  if (start != NULL)
-    {
+  if (start != NULL) {
       /* Eliminate '[', detach from rest of operand.  */
       *start++ = '\0';
 
       end = strchr (start, ']');
 
-      if (end == NULL)
-	as_bad (_("unmatched '['"));
-      else
-	{
-	  /* Eliminate ']' and make sure it was the last thing
-	     in the string.  */
-	  *end = '\0';
-	  if (*(end + 1) != '\0')
-	    as_bad (_("garbage after index spec ignored"));
-	}
-    }
+      if (end == NULL) {
+          as_bad (_("unmatched '['"));
+      } else {
+          /* Eliminate ']' and make sure it was the last thing
+             in the string.  */
+          *end = '\0';
+          if (*(end + 1) != '\0')
+              as_bad (_("garbage after index spec ignored"));
+      }
+  }
   return start;
 }
 
@@ -1006,111 +923,99 @@ parse_memop (memS *memP,	/* Where to put the results.  */
 
   /* Any index present? */
   indexP = get_ispec (argP);
-  if (indexP)
-    {
+  if (indexP) {
       p = strchr (indexP, '*');
-      if (p == NULL)
-	{
-	  /* No explicit scale -- use default for this instruction
-	     type and assembler mode.  */
-	  if (flag_mri)
-	    scale = 1;
-	  else
-	    /* GNU960 compatibility */
-	    scale = def_scale[optype - MEM1];
-	}
-      else
-	{
-	  *p++ = '\0';		/* Eliminate '*' */
+      if (p == NULL) {
+          /* No explicit scale -- use default for this instruction
+             type and assembler mode.  */
+          if (flag_mri)
+              scale = 1;
+          else
+              /* GNU960 compatibility */
+              scale = def_scale[optype - MEM1];
+      } else {
+          *p++ = '\0';		/* Eliminate '*' */
 
-	  /* Now indexP->a '\0'-terminated register name,
-	     and p->a scale factor.  */
+          /* Now indexP->a '\0'-terminated register name,
+             and p->a scale factor.  */
 
-	  if (!strcmp (p, "16"))
-	    scale = 16;
-	  else if (strchr ("1248", *p) && (p[1] == '\0'))
-	    scale = *p - '0';
-	  else
-	    scale = -1;
-	}
+          if (!strcmp (p, "16"))
+              scale = 16;
+          else if (strchr ("1248", *p) && (p[1] == '\0'))
+              scale = *p - '0';
+          else
+              scale = -1;
+      }
 
       regnum = get_regnum (indexP);	/* Get index reg. # */
-      if (!IS_RG_REG (regnum))
-	{
-	  as_bad (_("invalid index register"));
-	  return;
-	}
+      if (!IS_RG_REG (regnum)) {
+          as_bad (_("invalid index register"));
+          return;
+      }
 
       /* Convert scale to its binary encoding.  */
-      switch (scale)
-	{
-	case 1:
-	  scale = 0 << 7;
-	  break;
-	case 2:
-	  scale = 1 << 7;
-	  break;
-	case 4:
-	  scale = 2 << 7;
-	  break;
-	case 8:
-	  scale = 3 << 7;
-	  break;
-	case 16:
-	  scale = 4 << 7;
-	  break;
-	default:
-	  as_bad (_("invalid scale factor"));
-	  return;
-	};
+      switch (scale) {
+          case 1:
+              scale = 0 << 7;
+              break;
+          case 2:
+              scale = 1 << 7;
+              break;
+          case 4:
+              scale = 2 << 7;
+              break;
+          case 8:
+              scale = 3 << 7;
+              break;
+          case 16:
+              scale = 4 << 7;
+              break;
+          default:
+              as_bad (_("invalid scale factor"));
+              return;
+      };
 
       memP->opcode |= scale | regnum;	/* Set index bits in opcode.  */
       mode |= I_BIT;			/* Found a valid index spec.  */
     }
 
   /* Any abase (Register Indirect) specification present?  */
-  if ((p = strrchr (argP, '(')) != NULL)
-    {
+  if ((p = strrchr (argP, '(')) != NULL) {
       /* "(" is there -- does it start a legal abase spec?  If not, it
          could be part of a displacement expression.  */
       intP = (int *) str_hash_find (areg_hash, p);
-      if (intP != NULL)
-	{
-	  /* Got an abase here.  */
-	  regnum = *intP;
-	  *p = '\0';		/* Discard register spec.  */
-	  if (regnum == IPREL)
-	    /* We have to special-case ip-rel mode.  */
-	    iprel_flag = 1;
-	  else
-	    {
-	      memP->opcode |= regnum << 14;
-	      mode |= A_BIT;
-	    }
-	}
-    }
+      if (intP != NULL) {
+          /* Got an abase here.  */
+          regnum = *intP;
+          *p = '\0';		/* Discard register spec.  */
+          if (regnum == IPREL) {
+              /* We have to special-case ip-rel mode.  */
+              iprel_flag = 1;
+          } else {
+              memP->opcode |= regnum << 14;
+              mode |= A_BIT;
+          }
+      }
+  }
 
   /* Any expression present?  */
   memP->e = argP;
   if (*argP != '\0')
-    mode |= D_BIT;
+      mode |= D_BIT;
 
   /* Special-case ip-relative addressing.  */
-  if (iprel_flag)
-    {
+  if (iprel_flag) {
       if (mode & I_BIT)
-	syntax ();
-      else
-	{
-	  memP->opcode |= 5 << 10;	/* IP-relative mode.  */
-	  memP->disp = 32;
-	}
+          syntax ();
+      else {
+          memP->opcode |= 5 << 10;	/* IP-relative mode.  */
+          memP->disp = 32;
+      }
       return;
-    }
+  }
 
   /* Handle all other modes.  */
-  switch (mode)
-    {
+  switch (mode) {
     case D_BIT | A_BIT:
       /* Go with MEMA instruction format for now (grow to MEMB later
          if 12 bits is not enough for the displacement).  MEMA format
@@ -1180,18 +1085,16 @@ mem_fmt (char *args[],		/* args[0]->opcode mnemonic, args[1-3]->operands.  */
   instr.opcode = oP->opcode;
 
   /* Process operands.  */
-  for (i = 1; i <= oP->num_ops; i++)
-    {
+  for (i = 1; i <= oP->num_ops; i++) {
       opdesc = oP->operand[i - 1];
 
       if (MEMOP (opdesc))
-	parse_memop (&instr, args[i], oP->format);
-      else
-	{
-	  parse_regop (&regop, args[i], opdesc);
-	  instr.opcode |= regop.n << 19;
-	}
-    }
+          parse_memop (&instr, args[i], oP->format);
+      else {
+          parse_regop (&regop, args[i], opdesc);
+          instr.opcode |= regop.n << 19;
+      }
+  }
 
   /* Parse the displacement; this must be done before emitting the
      opcode, in case it is an expression using `.'.  */
@@ -1204,54 +1107,48 @@ mem_fmt (char *args[],		/* args[0]->opcode mnemonic, args[1-3]->operands.  */
     return;
 
   /* Process the displacement.  */
-  switch (exp.X_op)
-    {
-    case O_illegal:
-      as_bad (_("expression syntax error"));
-      break;
+  switch (exp.X_op) {
+      case O_illegal:
+          as_bad (_("expression syntax error"));
+          break;
 
-    case O_constant:
-      if (instr.disp == 32)
-	(void) emit (offs (exp));	/* Output displacement.  */
-      else
-	{
-	  /* 12-bit displacement.  */
-	  if (offs (exp) & ~0xfff)
-	    {
-	      /* Won't fit in 12 bits: convert already-output
-	         instruction to MEMB format, output
-	         displacement.  */
-	      mema_to_memb (outP);
-	      (void) emit (offs (exp));
-	    }
-	  else
-	    {
-	      /* WILL fit in 12 bits:  OR into opcode and
-	         overwrite the binary we already put out.  */
-	      instr.opcode |= offs (exp);
-	      md_number_to_chars (outP, instr.opcode, 4);
-	    }
-	}
-      break;
-
+      case O_constant:
+          if (instr.disp == 32)
+              (void) emit (offs (exp));	/* Output displacement.  */
+          else {
+              /* 12-bit displacement.  */
+              if (offs (exp) & ~0xfff) {
+                  /* Won't fit in 12 bits: convert already-output
+                     instruction to MEMB format, output
+                     displacement.  */
+                  mema_to_memb (outP);
+                  (void) emit (offs (exp));
+              } else {
+                  /* WILL fit in 12 bits:  OR into opcode and
+                     overwrite the binary we already put out.  */
+                  instr.opcode |= offs (exp);
+                  md_number_to_chars (outP, instr.opcode, 4);
+              }
+          }
+          break;
     default:
-      if (instr.disp == 12)
-	/* Displacement is dependent on a symbol, whose value
-	   may change at link time.  We HAVE to reserve 32 bits.
-	   Convert already-output opcode to MEMB format.  */
-	mema_to_memb (outP);
+          if (instr.disp == 12)
+              /* Displacement is dependent on a symbol, whose value
+                 may change at link time.  We HAVE to reserve 32 bits.
+                 Convert already-output opcode to MEMB format.  */
+              mema_to_memb (outP);
 
-      /* Output 0 displacement and set up address fixup for when
-         this symbol's value becomes known.  */
-      outP = emit ((long) 0);
-      fixP = fix_new_exp (frag_now,
-			  outP - frag_now->fr_literal,
-			  4, &exp, 0, NO_RELOC);
-      /* Steve's linker relaxing hack.  Mark this 32-bit relocation as
-         being in the instruction stream, specifically as part of a callx
-         instruction.  */
-      fixP->fx_bsr = callx;
-      break;
+          /* Output 0 displacement and set up address fixup for when
+             this symbol's value becomes known.  */
+          outP = emit ((long) 0);
+          fixP = fix_new_exp (frag_now,
+                  outP - frag_now->fr_literal,
+                  4, &exp, 0, NO_RELOC);
+          /* Steve's linker relaxing hack.  Mark this 32-bit relocation as
+             being in the instruction stream, specifically as part of a callx
+             instruction.  */
+          fixP->fx_bsr = callx;
+          break;
     }
 }
 
@@ -1266,29 +1163,27 @@ targ_has_iclass (int ic) /* Instruction class;  one of:
 {
   iclasses_seen |= ic;
 
-  switch (architecture)
-    {
-    case ARCH_KA:
-      return ic & (I_BASE | I_KX);
-    case ARCH_KB:
-      return ic & (I_BASE | I_KX | I_FP | I_DEC);
-    case ARCH_MC:
-      return ic & (I_BASE | I_KX | I_FP | I_DEC | I_MIL);
-    case ARCH_CA:
-      return ic & (I_BASE | I_CX | I_CX2 | I_CASIM);
-    case ARCH_JX:
-      return ic & (I_BASE | I_CX2 | I_JX);
-    case ARCH_HX:
-      return ic & (I_BASE | I_CX2 | I_JX | I_HX);
-    default:
-      if ((iclasses_seen & (I_KX | I_FP | I_DEC | I_MIL))
-	  && (iclasses_seen & (I_CX | I_CX2)))
-	{
-	  as_warn (_("architecture of opcode conflicts with that of earlier instruction(s)"));
-	  iclasses_seen &= ~ic;
-	}
-      return 1;
-    }
+  switch (architecture) {
+      case ARCH_KA:
+          return ic & (I_BASE | I_KX);
+      case ARCH_KB:
+          return ic & (I_BASE | I_KX | I_FP | I_DEC);
+      case ARCH_MC:
+          return ic & (I_BASE | I_KX | I_FP | I_DEC | I_MIL);
+      case ARCH_CA:
+          return ic & (I_BASE | I_CX | I_CX2 | I_CASIM);
+      case ARCH_JX:
+          return ic & (I_BASE | I_CX2 | I_JX);
+      case ARCH_HX:
+          return ic & (I_BASE | I_CX2 | I_JX | I_HX);
+      default:
+          if ((iclasses_seen & (I_KX | I_FP | I_DEC | I_MIL))
+                  && (iclasses_seen & (I_CX | I_CX2))) {
+              as_warn (_("architecture of opcode conflicts with that of earlier instruction(s)"));
+              iclasses_seen &= ~ic;
+          }
+          return 1;
+  }
 }
 
 /* shift_ok:
@@ -1317,7 +1212,15 @@ shift_ok (int n)		/* The constant of interest.  */
 
   return shift;
 }
-
+static void
+encodeSetbit(char* arg[], const char* bitpos, const char* src) {
+    static char buf0[10];
+    static char buf1[10];
+    arg[0] = (char*)"setbit";
+    arg[3] = arg[2]; // transfer arg2 over to arg3
+    arg[1] = (char*)bitpos;
+    arg[2] = (char*)src;
+}
 /* parse_ldcont:
    Parse and replace a 'ldconst' pseudo-instruction with an appropriate
    i80960 instruction.
@@ -1358,6 +1261,8 @@ parse_ldconst (char *arg[])	/* See above.  */
              ldconst  64,<reg>  -> shlo 8,3,<reg>
              ldconst  -1,<reg>  -> subo 1,0,<reg>
              ldconst -31,<reg>  -> subo 31,0,<reg>
+             ldconst  63,<reg>  -> setbit 5,31,<reg>
+             ldconst  65,<reg>  -> setbit 6,1,<reg>
 
              Anything else becomes:
              lda xxx,<reg>.  */
@@ -1384,7 +1289,14 @@ parse_ldconst (char *arg[])	/* See above.  */
               sprintf (buf2, "%d", n >> shift);
               arg[2] = buf2;
           } else {
-              arg[0] = (char *) "lda";
+              switch (n) {
+                  case 63:
+                      encodeSetbit(arg, "5", "31");
+                      break;
+                  default:
+                      arg[0] = (char *) "lda";
+                      break;
+              }
           }
           break;
 
