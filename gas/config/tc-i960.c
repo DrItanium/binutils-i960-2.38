@@ -383,9 +383,9 @@ aregs[] =
 };
 
 /* Hash tables.  */
-static struct hash_control *op_hash;	/* Opcode mnemonics.  */
-static struct hash_control *reg_hash;	/* Register name hash table.  */
-static struct hash_control *areg_hash;	/* Abase register hash table.  */
+static htab_t op_hash;	/* Opcode mnemonics.  */
+static htab_t reg_hash;	/* Register name hash table.  */
+static htab_t areg_hash;	/* Abase register hash table.  */
 
 /* Architecture for which we are assembling.  */
 #define ARCH_ANY	0	/* Default: no architecture checking done.  */
@@ -459,7 +459,6 @@ md_begin (void)
 {
   int i;			/* Loop counter.  */
   const struct i960_opcode *oP;	/* Pointer into opcode table.  */
-  const char *retval;		/* Value returned by hash functions.  */
 
   op_hash = str_htab_create ();
   reg_hash = str_htab_create ();
@@ -467,21 +466,25 @@ md_begin (void)
 
   /* For some reason, the base assembler uses an empty string for "no
      error message", instead of a NULL pointer.  */
-  retval = 0;
 
-  for (oP = i960_opcodes; oP->name && !retval; oP++)
-    retval = str_hash_insert (op_hash, oP->name, (void *) oP, 0);
+  for (oP = i960_opcodes; oP->name; oP++) {
+    if (str_hash_insert (op_hash, oP->name, (void *) oP, 0)) {
+        as_fatal(_("Duplicate opcode entry \"%s\"."), oP->name);
+    }
+  }
 
-  for (i = 0; regnames[i].reg_name && !retval; i++)
-    retval = str_hash_insert (reg_hash, regnames[i].reg_name,
-			  (char *) &regnames[i].reg_num, 0);
+  for (i = 0; regnames[i].reg_name; i++)
+    if (str_hash_insert (reg_hash, regnames[i].reg_name,
+			  (char *) &regnames[i].reg_num, 0)) {
+        as_fatal(_("Duplicate register entry \"%s\"."), regnames[i].reg_name);
+    }
 
-  for (i = 0; aregs[i].areg_name && !retval; i++)
-    retval = str_hash_insert (areg_hash, aregs[i].areg_name,
-			  (char *) &aregs[i].areg_num, 0);
+  for (i = 0; aregs[i].areg_name; i++)
+    if (str_hash_insert (areg_hash, aregs[i].areg_name,
+			  (char *) &aregs[i].areg_num, 0)) {
+        as_fatal(_("Duplicate areg entry \"%s\"."), aregs[i].areg_name);
+    }
 
-  if (retval)
-    as_fatal (_("Hashing returned \"%s\"."), retval);
 }
 
 /* parse_expr:		parse an expression
